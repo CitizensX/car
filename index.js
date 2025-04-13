@@ -72,7 +72,7 @@ function parseDeviceResponse(response) {
     isConnected = true;
     offlineOverlay.style.display = 'none';
     enableButtons();
-    
+
     const [
         lockState,
         engineState,
