@@ -174,7 +174,7 @@ findCarButton.addEventListener('click', () => {
     const commandData = JSON.stringify({
         M: 'say',
         ID: 'D31509',
-        C: findCarButton.textContent === '打开寻车' ? '004' : '044'
+        C: findCarButton.textContent === '打开寻车' ? '004' : '014'
     });
     ws.send(commandData);
 });
