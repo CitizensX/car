@@ -39,7 +39,7 @@ body {
     align-items: flex-start;
     padding: 0 20px; 
     box-sizing: border-box; 
-    gap: 100px; /* 新增：为信息容器和按钮区域添加间距 */
+    gap: 500px; /* 新增：为信息容器和按钮区域添加间距 */
 }
 
 .info-container { 
