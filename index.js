@@ -84,11 +84,11 @@ function parseDeviceResponse(response) {
         humidity
     ] = response.split(',');
 
-    updateButtonState(lockButton, lockState, '解锁', '锁定', 'gray', '#4CAF50');
-    updateButtonState(startButton, engineState, '启动', '关闭', 'gray', '#4CAF50', '#007BFF');
-    updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', 'gray', '#4CAF50');
-    updateButtonState(findCarButton, findCarState, '打开寻车', '关闭寻车', 'gray', '#4CAF50');
-    updateButtonState(windowButton, windowState, '开窗', '关窗', 'gray', '#4CAF50');
+    updateButtonState(lockButton, lockState, '解锁', '锁定', '#202020', '#4CAF50');
+    updateButtonState(startButton, engineState, '启动引擎', '关闭引擎', '#202020', '#4CAF50', '#007BFF');
+    updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
+    updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
+    updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
