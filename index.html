@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<style type="text/css">
+INPUT {font-size:20px};
+TEXTAREA{font-size:30px};
+Button {font-size :30px};
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>网络配置</title>
+</head>
+<body>
+<form action="set.php" method="post" enctype="application/x-www-form-urlencoded">
+<table width="400" border="0">
+ <tr>
+    <td>WIFI名称：</td>
+    <td><input name="SSID" type="text" /></td>
+  </tr>
+  <tr>
+    <td>WIFI密码:</td>
+    <td><input name="password" type="password" /></td>
+  </tr>
+</table>
+<input name="提交" type="submit" value="提交" />
+</form>
+<div id="my"></div>
+<script type="text/javascript">
+var http_request;
+var host=window.location.host;
+var URL="http://"+host+"/tmp.php";
+var id;
+if(window.XMLHttpRequest)
+{
+	http_request=new XMLHttpRequest;
+	if(http_request.overrideMimeType)
+	{
+		http_request.overrideMimeType("text/xml");
+	}
+	
+}else if(window.ActiveXObject)
+{
+	try{
+		http_request=new ActiveXObject("Microsoft.XMLHTTP");
+		}catch(e)
+		{
+		}
+	
+	
+}
+
+if(!http_request)
+{
+	window.alert("不能创建XMLHTTPRequest对象！");
+}
+id=window.setInterval(tip,1000);
+send_request("GET",URL+"&random="+Math.random(),"","TEXT",processTextResponse);
+function tip()
+{
+	send_request("GET",URL+"&random="+Math.random(),"","TEXT",processTextResponse);
+}
+function send_request(method,url,content,responseType,callback){
+	if(responseType.toLowerCase()=="text"){
+	http_request.onreadystatechange=callback;
+	}else if(responseType.toLowerCase()=="xml"){
+	http_request.onreadystatechange=callback;
+	window.alert("响应参数错误");
+	return false;		
+	}
+	if(method.toLowerCase()=="get"){
+		http_request.open(method,url,true);
+		}else if(method.toLowerCase()=="post")
+		{
+			http_request.open(method,url,true);
+			http_request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+			http_request.setRequestHeader("Accept-Language","Zh-cn");
+			
+		}else{
+			alert("http请求错误");
+			return false;
+			}
+			http_request.send(content);
+		
+}
+function processTextResponse(){
+	if(http_request.readyState==4 && http_request.status==200){
+		var b=http_request.responseText;
+		var myobject=eval('('+b+')');
+		document.getElementById("my").innerHTML="温度为："+(myobject.success.value)/100+"℃";
+		}
+	
+}
+</script>
+</body>
+</html>
