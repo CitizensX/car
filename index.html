@@ -1,251 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cn">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汽车控制</title>
-    <style>
-        body {
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            width: 80%;
-        }
-        .info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .buttons {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 5px 0;
-            cursor: pointer;
-        }
-        .button-disabled {
-            background-color: gray;
-            cursor: not-allowed;
-        }
-        .offline-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: red;
-        }
-    </style>
+    <title>CAR</title>
+    <link rel="stylesheet" href="index.css">
 </head>
+
 <body>
     <div class="container">
         <img src="car.jpg" alt="Car" id="car-image">
         <div class="header">
             <div class="info">
-                <p>电压：<span id="voltage">--</span></p>
-                <p>温度：<span id="temperature">--</span></p>
-                <p>湿度：<span id="humidity">--</span></p>
+                <p>电压：<span id="voltage">未连接</span></p>
+                <p>温度：<span id="temperature">未连接</span></p>
+                <p>湿度：<span id="humidity">未连接</span></p>
             </div>
             <div class="buttons">
-                <button class="button" id="lock-button">解锁</button>
-                <button class="button" id="start-button">启动</button>
-                <button class="button" id="trunk-button">打开尾箱</button>
-                <button class="button" id="find-car-button">打开寻车</button>
-                <button class="button" id="window-button">开窗</button>
+                <button class="button" id="lock-button" disabled>解锁</button>
+                <button class="button" id="start-button" disabled>启动</button>
+                <button class="button" id="trunk-button" disabled>打开尾箱</button>
+                <button class="button" id="find-car-button" disabled>打开寻车</button>
+                <button class="button" id="window-button" disabled>开窗</button>
             </div>
         </div>
     </div>
     <div class="offline-overlay" id="offline-overlay">设备离线</div>
-
-    <script>
-        const lockButton = document.getElementById('lock-button');
-        const startButton = document.getElementById('start-button');
-        const trunkButton = document.getElementById('trunk-button');
-        const findCarButton = document.getElementById('find-car-button');
-        const windowButton = document.getElementById('window-button');
-        const voltageDisplay = document.getElementById('voltage');
-        const temperatureDisplay = document.getElementById('temperature');
-        const humidityDisplay = document.getElementById('humidity');
-        const offlineOverlay = document.getElementById('offline-overlay');
-        let lastDataTime = Date.now();
-        let isConnected = false;
-        let ws;
-
-        // WebSocket连接
-        function connectWebSocket() {
-            ws = new WebSocket('wss://www.bigiot.net:8484');
-            ws.onopen = () => {
-                console.log('WebSocket连接成功');
-                login();
-            };
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.M === 'loginok') {
-                    isConnected = true;
-                    offlineOverlay.style.display = 'none';
-                    // 每3秒发送沟通指令数据
-                    setInterval(sendCommunicationCommand, 3000);
-                    // 每20秒检查设备连接状态
-                    setInterval(checkDeviceConnection, 20000);
-                } else if (data.M === 'say' && data.SIGN === 'S') {
-                    parseDeviceResponse(data.C);
-                }
-            };
-            ws.onclose = () => {
-                console.log('WebSocket连接关闭');
-                isConnected = false;
-                offlineOverlay.style.display = 'flex';
-            };
-            ws.onerror = (error) => {
-                console.error('WebSocket连接错误', error);
-                isConnected = false;
-                offlineOverlay.style.display = 'flex';
-            };
-        }
-
-        // 用户登录
-        function login() {
-            const loginData = JSON.stringify({
-                M: 'login',
-                ID: '5567',
-                K: '383f372032'
-            });
-            ws.send(loginData);
-        }
-
-        // 发送沟通指令数据
-        function sendCommunicationCommand() {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: '00'
-            });
-            ws.send(commandData);
-        }
-
-        // 解析设备返回数据
-        function parseDeviceResponse(response) {
-            const [
-                lockState,
-                engineState,
-                trunkState,
-                findCarState,
-                windowState,
-                voltage,
-                temperature,
-                humidity
-            ] = response.split(',');
-
-            updateButtonState(lockButton, lockState, '解锁', '锁定');
-            updateButtonState(startButton, engineState, '启动', '关闭');
-            updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱');
-            updateButtonState(findCarButton, findCarState, '打开寻车', '关闭寻车');
-            updateButtonState(windowButton, windowState, '开窗', '关窗');
-
-            voltageDisplay.textContent = voltage;
-            temperatureDisplay.textContent = temperature;
-            humidityDisplay.textContent = humidity;
-
-            lastDataTime = Date.now();
-        }
-
-        // 更新按钮状态
-        function updateButtonState(button, state, text1, text2) {
-            if (state === '0') {
-                button.textContent = text1;
-                button.style.backgroundColor = '#4CAF50';
-            } else {
-                button.textContent = text2;
-                button.style.backgroundColor = '#4CAF50';
-            }
-        }
-
-        // 检查设备连接状态
-        function checkDeviceConnection() {
-            if (Date.now() - lastDataTime > 20000) {
-                isConnected = false;
-                offlineOverlay.style.display = 'flex';
-            }
-        }
-
-        // 按钮点击事件
-        lockButton.addEventListener('click', () => {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: lockButton.textContent === '解锁' ? '001' : '011'
-            });
-            ws.send(commandData);
-        });
-
-        startButton.addEventListener('click', () => {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: startButton.textContent === '启动' ? '002' : '012'
-            });
-            ws.send(commandData);
-        });
-
-        trunkButton.addEventListener('click', () => {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: trunkButton.textContent === '打开尾箱' ? '003' : '013'
-            });
-            ws.send(commandData);
-        });
-
-        findCarButton.addEventListener('click', () => {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: findCarButton.textContent === '打开寻车' ? '004' : '044'
-            });
-            ws.send(commandData);
-        });
-
-        windowButton.addEventListener('click', () => {
-            if (!isConnected) return;
-            const commandData = JSON.stringify({
-                M: 'say',
-                ID: 'D31509',
-                C: windowButton.textContent === '开窗' ? '005' : '015'
-            });
-            ws.send(commandData);
-        });
-
-        // 页面加载时连接WebSocket
-        window.onload = connectWebSocket;
-    </script>
+    <script src="index.js"></script>
 </body>
 </html>
