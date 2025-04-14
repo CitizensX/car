@@ -83,7 +83,46 @@ function clearAddDeviceInputs() {
 
 // 确定添加设备
 function addDevice() {
-    const deviceImage = document.getElementById('deviceImage').files[0]? URL.createObjectURL(document.getElementById('deviceImage').files[0]) : '';
+    const deviceImageInput = document.getElementById('deviceImage');
+    let deviceImage = '';
+    if (deviceImageInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            deviceImage = e.target.result;
+            const deviceName = document.getElementById('deviceName').value;
+            const deviceId = document.getElementById('deviceId').value;
+            const deviceKey = document.getElementById('deviceKey').value;
+            const lockSignalValue = document.getElementById('lockSignalValue').value;
+            const voltageDataInterface = document.getElementById('voltageDataInterface').value;
+            const temperatureDataInterface = document.getElementById('temperatureDataInterface').value;
+            const humidityDataInterface = document.getElementById('humidityDataInterface').value;
+            const lockDataInterface = document.getElementById('lockDataInterface').value;
+            const startDataInterface = document.getElementById('startDataInterface').value;
+            const windowDataInterface = document.getElementById('windowDataInterface').value;
+
+            const newDevice = {
+                device_image: deviceImage,
+                device_name: deviceName,
+                device_id: deviceId,
+                device_key: deviceKey,
+                device_LockSignalValue: lockSignalValue,
+                device_VoltageDataInterface: voltageDataInterface,
+                device_TemperatureDataInterface: temperatureDataInterface,
+                device_HumidityDataInterface: humidityDataInterface,
+                device_LockDataInterface: lockDataInterface,
+                device_StartDataInterface: startDataInterface,
+                device_WindowDataInterface: windowDataInterface
+            };
+
+            deviceConfigs.push(newDevice);
+            localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
+            closeAddDeviceModal();
+            loadDeviceList();
+        };
+        reader.readAsDataURL(deviceImageInput.files[0]);
+        return;
+    }
+
     const deviceName = document.getElementById('deviceName').value;
     const deviceId = document.getElementById('deviceId').value;
     const deviceKey = document.getElementById('deviceKey').value;
@@ -218,7 +257,46 @@ function clearEditDeviceInputs() {
 function editDevice() {
     const editDeviceModal = document.getElementById('editDeviceModal');
     const index = parseInt(editDeviceModal.dataset.index);
-    const deviceImage = document.getElementById('editDeviceImage').files[0]? URL.createObjectURL(document.getElementById('editDeviceImage').files[0]) : deviceConfigs[index].device_image;
+    const deviceImageInput = document.getElementById('editDeviceImage');
+    let deviceImage = deviceConfigs[index].device_image;
+    if (deviceImageInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            deviceImage = e.target.result;
+            const deviceName = document.getElementById('editDeviceName').value;
+            const deviceId = document.getElementById('editDeviceId').value;
+            const deviceKey = document.getElementById('editDeviceKey').value;
+            const lockSignalValue = document.getElementById('editLockSignalValue').value;
+            const voltageDataInterface = document.getElementById('editVoltageDataInterface').value;
+            const temperatureDataInterface = document.getElementById('editTemperatureDataInterface').value;
+            const humidityDataInterface = document.getElementById('editHumidityDataInterface').value;
+            const lockDataInterface = document.getElementById('editLockDataInterface').value;
+            const startDataInterface = document.getElementById('editStartDataInterface').value;
+            const windowDataInterface = document.getElementById('editWindowDataInterface').value;
+
+            const editedDevice = {
+                device_image: deviceImage,
+                device_name: deviceName,
+                device_id: deviceId,
+                device_key: deviceKey,
+                device_LockSignalValue: lockSignalValue,
+                device_VoltageDataInterface: voltageDataInterface,
+                device_TemperatureDataInterface: temperatureDataInterface,
+                device_HumidityDataInterface: humidityDataInterface,
+                device_LockDataInterface: lockDataInterface,
+                device_StartDataInterface: startDataInterface,
+                device_WindowDataInterface: windowDataInterface
+            };
+
+            deviceConfigs[index] = editedDevice;
+            localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
+            closeEditDeviceModal();
+            loadDeviceList();
+        };
+        reader.readAsDataURL(deviceImageInput.files[0]);
+        return;
+    }
+
     const deviceName = document.getElementById('editDeviceName').value;
     const deviceId = document.getElementById('editDeviceId').value;
     const deviceKey = document.getElementById('editDeviceKey').value;
@@ -247,7 +325,7 @@ function editDevice() {
     deviceConfigs[index] = editedDevice;
     localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
     closeEditDeviceModal();
-    loadDeviceList(); // 修改设备后重新加载设备列表，更新设备名称显示
+    loadDeviceList();
 }
 
 // 删除设备
@@ -300,6 +378,24 @@ function init() {
         } else {
             addDeviceImagePreview.src = '';
             addDeviceImagePreview.style.display = 'none';
+        }
+    });
+
+    // 修改设备图片选择事件
+    const editDeviceImageInput = document.getElementById('editDeviceImage');
+    editDeviceImageInput.addEventListener('change', function () {
+        const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                editDeviceImagePreview.src = e.target.result;
+                editDeviceImagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            editDeviceImagePreview.src = '';
+            editDeviceImagePreview.style.display = 'none';
         }
     });
 }
