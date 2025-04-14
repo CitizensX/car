@@ -61,6 +61,9 @@ function closeAddDeviceModal() {
     addDeviceModal.style.display = 'none';
     // 清空输入框内容
     clearAddDeviceInputs();
+    const addDeviceImagePreview = document.getElementById('addDeviceImagePreview');
+    addDeviceImagePreview.src = '';
+    addDeviceImagePreview.style.display = 'none';
 }
 
 // 清空添加设备输入框内容
@@ -281,6 +284,24 @@ function init() {
     closeEditDeviceModalBtn.addEventListener('click', closeEditDeviceModal);
 
     loadDeviceList();
+
+    // 添加设备图片选择事件
+    const deviceImageInput = document.getElementById('deviceImage');
+    deviceImageInput.addEventListener('change', function () {
+        const addDeviceImagePreview = document.getElementById('addDeviceImagePreview');
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                addDeviceImagePreview.src = e.target.result;
+                addDeviceImagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            addDeviceImagePreview.src = '';
+            addDeviceImagePreview.style.display = 'none';
+        }
+    });
 }
 
 window.onload = init;
