@@ -8,6 +8,7 @@ function loadDeviceList() {
         deviceConfigs = JSON.parse(deviceConfigS);
         const deviceList = document.getElementById('deviceList');
         deviceList.innerHTML = '';
+        const currentDeviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
         deviceConfigs.forEach((device, index) => {
             const listItem = document.createElement('li');
             const selectMarker = document.createElement('span');
@@ -27,9 +28,19 @@ function loadDeviceList() {
             listItem.appendChild(deleteBtn);
 
             listItem.addEventListener('click', () => {
-                selectMarker.classList.toggle('selected');
+                // 移除所有设备的选择效果
+                const allSelectMarkers = document.querySelectorAll('.select-marker');
+                allSelectMarkers.forEach(marker => {
+                    marker.classList.remove('selected');
+                });
+                // 添加当前点击设备的选择效果
+                selectMarker.classList.add('selected');
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
             });
+
+            if (currentDeviceConfig && currentDeviceConfig.device_name === device.device_name) {
+                selectMarker.classList.add('selected');
+            }
 
             deviceList.appendChild(listItem);
         });
@@ -158,6 +169,16 @@ function openEditDeviceModal(index) {
     document.getElementById('editLockDataInterface').value = device.device_LockDataInterface;
     document.getElementById('editStartDataInterface').value = device.device_StartDataInterface;
     document.getElementById('editWindowDataInterface').value = device.device_WindowDataInterface;
+
+    const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
+    if (device.device_image) {
+        editDeviceImagePreview.src = device.device_image;
+        editDeviceImagePreview.style.display = 'block';
+    } else {
+        editDeviceImagePreview.src = '';
+        editDeviceImagePreview.style.display = 'none';
+    }
+
     // 存储当前编辑设备的索引
     editDeviceModal.dataset.index = index;
 
@@ -170,6 +191,9 @@ function closeEditDeviceModal() {
     editDeviceModal.style.display = 'none';
     // 清空输入框内容
     clearEditDeviceInputs();
+    const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
+    editDeviceImagePreview.src = '';
+    editDeviceImagePreview.style.display = 'none';
 }
 
 // 清空修改设备输入框内容
