@@ -1,5 +1,5 @@
 body {
-    background-color: black; 
+    background-color: black;
     color: white;
     font-family: 'Roboto', sans-serif;
     margin: 0;
@@ -8,47 +8,47 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%; 
-    height: 100vh; 
-    background-color: black; 
-    padding: 0; 
-    border-radius: 0; 
-    box-shadow: none; 
-    overflow: auto; 
-    margin: 0; 
+    width: 100%;
+    height: 100vh;
+    background-color: black;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: auto;
+    margin: 0;
 }
 
 #car-image {
     max-width: 100%;
     height: auto;
-    border-radius: 0; 
-    margin-bottom: 20px; 
+    border-radius: 0;
+    margin-bottom: 20px;
 }
 
-.content-area { 
+.content-area {
     display: flex;
     width: 100%;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 0 20px; 
-    box-sizing: border-box; 
-    gap: 30px; /* 信息容器和按钮区域添加间距 */
+    padding: 0 20px;
+    box-sizing: border-box;
+    gap: 30px;
 }
 
-.info-container { 
+.info-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 30%; 
-    background-color: #151515; 
-    padding: 10px; 
+    width: 30%;
+    background-color: #151515;
+    padding: 10px;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -60,11 +60,11 @@ body {
     width: 100%;
 }
 
-.button-area { 
+.button-area {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 65%; 
+    width: 65%;
 }
 
 .button {
@@ -74,14 +74,14 @@ body {
     padding: 10px 20px;
     text-align: center;
     text-decoration: none;
-    display: block; 
+    display: block;
     font-size: 16px;
     margin: 5px 0;
     cursor: pointer;
     transition: all 0.3s ease;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    width: 100%; 
+    width: 100%;
 }
 
 .button:active {
@@ -118,13 +118,12 @@ body {
     }
     .info-container {
         width: 100%;
-        margin-bottom: 20px; 
+        margin-bottom: 20px;
     }
     .button-area {
         width: 100%;
     }
     .button {
-        width: 90%; 
+        width: 90%;
     }
-}
-    
+}    

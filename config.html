@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config</title>
+    <link rel="stylesheet" href="config.css">
+</head>
+
+<body>
+    <ul id="deviceList"></ul>
+    <button id="addDeviceBtn">+添加设备</button>
+    <button id="userConfigBtn">用户配置</button>
+
+    <!-- 添加设备弹窗 -->
+    <div id="addDeviceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAddDeviceModal">&times;</span>
+            <h2>添加设备</h2>
+            <label for="deviceImage">设备图片：</label>
+            <input type="file" id="deviceImage" accept="image/*">
+            <label for="deviceName">设备名称：</label>
+            <input type="text" id="deviceName" placeholder="设备名称">
+            <label for="deviceId">设备ID：</label>
+            <input type="text" id="deviceId" placeholder="设备ID">
+            <label for="deviceKey">设备Key：</label>
+            <input type="text" id="deviceKey" placeholder="设备Key">
+            <label for="lockSignalValue">锁定信号值：</label>
+            <input type="text" id="lockSignalValue" placeholder="锁定信号值">
+            <label for="voltageDataInterface">电压数据接口：</label>
+            <input type="text" id="voltageDataInterface" placeholder="电压数据接口">
+            <label for="temperatureDataInterface">温度数据接口：</label>
+            <input type="text" id="temperatureDataInterface" placeholder="温度数据接口">
+            <label for="humidityDataInterface">湿度数据接口：</label>
+            <input type="text" id="humidityDataInterface" placeholder="湿度数据接口">
+            <label for="lockDataInterface">锁定数据接口：</label>
+            <input type="text" id="lockDataInterface" placeholder="锁定数据接口">
+            <label for="startDataInterface">启动数据接口：</label>
+            <input type="text" id="startDataInterface" placeholder="启动数据接口">
+            <label for="windowDataInterface">车窗数据接口：</label>
+            <input type="text" id="windowDataInterface" placeholder="车窗数据接口">
+            <button id="addDeviceConfirmBtn">确定</button>
+            <button id="addDeviceCancelBtn">取消</button>
+        </div>
+    </div>
+
+    <!-- 用户配置弹窗 -->
+    <div id="userConfigModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeUserConfigModal">&times;</span>
+            <h2>用户配置</h2>
+            <label for="clientId">用户ID：</label>
+            <input type="text" id="clientId" placeholder="用户ID">
+            <label for="clientSecret">用户Key：</label>
+            <input type="text" id="clientSecret" placeholder="用户Key">
+            <label for="userName">应用ID：</label>
+            <input type="text" id="userName" placeholder="应用ID">
+            <label for="userPassword">应用Key：</label>
+            <input type="text" id="userPassword" placeholder="应用Key">
+            <button id="userConfigConfirmBtn">确定</button>
+            <button id="userConfigCancelBtn">取消</button>
+        </div>
+    </div>
+
+    <!-- 修改设备弹窗 -->
+    <div id="editDeviceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeEditDeviceModal">&times;</span>
+            <h2>修改设备</h2>
+            <label for="editDeviceImage">设备图片：</label>
+            <input type="file" id="editDeviceImage" accept="image/*">
+            <label for="editDeviceName">设备名称：</label>
+            <input type="text" id="editDeviceName" placeholder="设备名称">
+            <label for="editDeviceId">设备ID：</label>
+            <input type="text" id="editDeviceId" placeholder="设备ID">
+            <label for="editDeviceKey">设备Key：</label>
+            <input type="text" id="editDeviceKey" placeholder="设备Key">
+            <label for="editLockSignalValue">锁定信号值：</label>
+            <input type="text" id="editLockSignalValue" placeholder="锁定信号值">
+            <label for="editVoltageDataInterface">电压数据接口：</label>
+            <input type="text" id="editVoltageDataInterface" placeholder="电压数据接口">
+            <label for="editTemperatureDataInterface">温度数据接口：</label>
+            <input type="text" id="editTemperatureDataInterface" placeholder="温度数据接口">
+            <label for="editHumidityDataInterface">湿度数据接口：</label>
+            <input type="text" id="editHumidityDataInterface" placeholder="湿度数据接口">
+            <label for="editLockDataInterface">锁定数据接口：</label>
+            <input type="text" id="editLockDataInterface" placeholder="锁定数据接口">
+            <label for="editStartDataInterface">启动数据接口：</label>
+            <input type="text" id="editStartDataInterface" placeholder="启动数据接口">
+            <label for="editWindowDataInterface">车窗数据接口：</label>
+            <input type="text" id="editWindowDataInterface" placeholder="车窗数据接口">
+            <button id="editDeviceConfirmBtn">确定</button>
+            <button id="editDeviceCancelBtn">取消</button>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+</body>
+
+</html>
+    

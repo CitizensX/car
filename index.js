@@ -1,3 +1,7 @@
+// 全局变量
+let client_id, client_secret, user_name, user_password;
+let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface, device_image;
+
 // 获取页面元素
 const lockButton = document.getElementById('lock-button');
 const startButton = document.getElementById('start-button');
@@ -13,32 +17,89 @@ let lastDataTime = Date.now();
 let isConnected = false;
 let ws;
 
-// WebSocket连接
+// 检查配置文件并读取内容
+function checkConfigFiles() {
+    const deviceConfig = localStorage.getItem('DeviceConfig');
+    const userConfig = localStorage.getItem('UserConfig');
+
+    if (!deviceConfig || !userConfig) {
+        window.location.href = 'config.html';
+        return;
+    }
+
+    try {
+        const userData = JSON.parse(userConfig);
+        client_id = userData.client_id;
+        client_secret = userData.client_secret;
+        user_name = userData.user_name;
+        user_password = userData.user_password;
+
+        if (!client_id || !client_secret || !user_password || !user_password) {
+            window.location.href = 'config.html';
+            return;
+        }
+    } catch (error) {
+        window.location.href = 'config.html';
+        return;
+    }
+
+    try {
+        const deviceData = JSON.parse(deviceConfig);
+        device_name = deviceData.device_name;
+        device_id = deviceData.device_id;
+        device_key = deviceData.device_key;
+        device_LockSignalValue = deviceData.device_LockSignalValue;
+        device_VoltageDataInterface = deviceData.device_VoltageDataInterface;
+        device_TemperatureDataInterface = deviceData.device_TemperatureDataInterface;
+        device_HumidityDataInterface = deviceData.device_HumidityDataInterface;
+        device_LockDataInterface = deviceData.device_LockDataInterface;
+        device_StartDataInterface = deviceData.device_StartDataInterface;
+        device_WindowDataInterface = deviceData.device_WindowDataInterface;
+        device_image = deviceData.device_image;
+
+        if (!device_name || !device_id || !device_key) {
+            window.location.href = 'config.html';
+            return;
+        }
+    } catch (error) {
+        window.location.href = 'config.html';
+        return;
+    }
+
+    // 设置汽车图片
+    const carImage = document.getElementById('car-image');
+    carImage.src = device_image;
+
+    // 连接 WebSocket
+    connectWebSocket();
+}
+
+// WebSocket 连接
 function connectWebSocket() {
     ws = new WebSocket('wss://www.bigiot.net:8484');
     ws.onopen = () => {
-        console.log('WebSocket连接成功');
+        console.log('WebSocket 连接成功');
         login();
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.M === 'loginok') {
-            // 每3秒发送沟通指令数据
+            // 每 3 秒发送沟通指令数据
             setInterval(sendCommunicationCommand, 3000);
-            // 每10秒检查设备连接状态
+            // 每 10 秒检查设备连接状态
             setInterval(checkDeviceConnection, 10000);
         } else if (data.M === 'say' && data.SIGN === 'S') {
             parseDeviceResponse(data.C);
         }
     };
     ws.onclose = () => {
-        console.log('WebSocket连接关闭');
+        console.log('WebSocket 连接关闭');
         isConnected = false;
         offlineOverlay.style.display = 'flex';
         disableButtons();
     };
     ws.onerror = (error) => {
-        console.error('WebSocket连接错误', error);
+        console.error('WebSocket 连接错误', error);
         isConnected = false;
         offlineOverlay.style.display = 'flex';
         disableButtons();
@@ -49,8 +110,8 @@ function connectWebSocket() {
 function login() {
     const loginData = JSON.stringify({
         M: 'login',
-        ID: '5567',
-        K: '383f372032'
+        ID: user_name,
+        K: user_password
     });
     ws.send(loginData);
 }
@@ -59,7 +120,7 @@ function login() {
 function sendCommunicationCommand() {
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: '00'
     });
     if (ws.readyState === WebSocket.OPEN) {
@@ -143,7 +204,7 @@ lockButton.addEventListener('click', () => {
     if (!isConnected) return;
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: lockButton.textContent === '解锁' ? '001' : '011'
     });
     ws.send(commandData);
@@ -153,7 +214,7 @@ startButton.addEventListener('click', () => {
     if (!isConnected) return;
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: startButton.textContent === '启动' ? '002' : '012'
     });
     ws.send(commandData);
@@ -163,7 +224,7 @@ trunkButton.addEventListener('click', () => {
     if (!isConnected) return;
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: trunkButton.textContent === '打开尾箱' ? '003' : '013'
     });
     ws.send(commandData);
@@ -173,7 +234,7 @@ findCarButton.addEventListener('click', () => {
     if (!isConnected) return;
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: findCarButton.textContent === '打开寻车' ? '004' : '014'
     });
     ws.send(commandData);
@@ -183,15 +244,15 @@ windowButton.addEventListener('click', () => {
     if (!isConnected) return;
     const commandData = JSON.stringify({
         M: 'say',
-        ID: 'D31509',
+        ID: device_id,
         C: windowButton.textContent === '开窗' ? '005' : '015'
     });
     ws.send(commandData);
 });
 
 // 页面加载
-window.onload = function() {
-    connectWebSocket();
+window.onload = function () {
+    checkConfigFiles();
     isConnected = false;
     offlineOverlay.style.display = 'flex';
     disableButtons();
