@@ -1,21 +1,22 @@
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
+    background-color: #000; /* 设置背景为黑色 */
+    color: #fff; /* 设置文字颜色为白色 */
 }
 
 button {
     padding: 8px 16px;
     margin: 5px;
-    background-color: #333;
-    color: #fff;
+    background-color: #4CAF50; /* 设置按钮背景颜色 */
+    color: #fff; /* 设置按钮文字颜色 */
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #555;
+    background-color: #45a049;
 }
 
 /* 设备列表样式 */
@@ -26,9 +27,11 @@ button:hover {
 
 #deviceList li {
     margin: 10px 0;
-    border: 1px solid #333;
+    border: 1px solid #555;
     padding: 10px;
     border-radius: 5px;
+    background-color: #222; /* 设置设备列表背景颜色 */
+    color: #fff; /* 设置设备列表文字颜色 */
 }
 
 /* 选择标志样式 */
@@ -36,14 +39,14 @@ button:hover {
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid #ccc;
+    border: 2px solid #555;
     border-radius: 50%;
     margin-right: 10px;
     vertical-align: middle;
 }
 
 .select-marker.selected {
-    background-color: #fff;
+    background-color: #4CAF50; /* 设置选中状态的颜色 */
 }
 
 /* 弹窗样式 */
@@ -60,43 +63,40 @@ button:hover {
 }
 
 .modal-content {
-    background-color: #111;
+    background-color: #222; /* 设置弹窗背景颜色 */
     margin: 15% auto;
     padding: 20px;
-    border: 1px solid #333;
+    border: 1px solid #555;
     width: 80%;
     max-width: 500px;
     border-radius: 5px;
+    color: #fff; /* 设置弹窗文字颜色 */
 }
-
 .close {
     color: #aaa;
     float: right;
     font-size: 28px;
     font-weight: bold;
 }
-
 .close:hover,
 .close:focus {
-    color: white;
+    color: #fff;
     text-decoration: none;
     cursor: pointer;
 }
-
 input[type="text"],
 input[type="number"] {
     width: 100%;
     padding: 8px;
     margin: 5px 0;
     box-sizing: border-box;
-    background-color: #333;
-    color: #fff;
-    border: none;
+    background-color: #333; /* 设置输入框背景颜色 /
+    color: #fff; / 设置输入框文字颜色 */
+    border: 1px solid #555;
     border-radius: 5px;
 }
-
 label {
     display: block;
     margin-bottom: 5px;
+    color: #fff; /* 设置标签文字颜色 */
 }
-    
