@@ -7,15 +7,7 @@ body {
 button {
     padding: 8px 16px;
     margin: 5px;
-    background-color: #333;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
     cursor: pointer;
-}
-
-button:hover {
-    background-color: #555;
 }
 
 /* 设备列表样式 */
@@ -26,10 +18,11 @@ button:hover {
 
 #deviceList li {
     margin: 10px 0;
-    border: 1px solid #333;
+    border: 1px solid #ccc;
     padding: 10px;
     border-radius: 5px;
-    background-color: #111;
+    display: flex;
+    align-items: center;
 }
 
 /* 选择标志样式 */
@@ -37,14 +30,22 @@ button:hover {
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid #333;
+    border: 2px solid #ccc;
     border-radius: 50%;
     margin-right: 10px;
     vertical-align: middle;
 }
 
 .select-marker.selected {
-    background-color: #fff;
+    background-color: #000;
+}
+
+/* 设备图片小图标样式 */
+.device-image-icon {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    margin-right: 10px;
 }
 
 /* 弹窗样式 */
@@ -61,14 +62,13 @@ button:hover {
 }
 
 .modal-content {
-    background-color: #111;
+    background-color: #fefefe;
     margin: 15% auto;
     padding: 20px;
-    border: 1px solid #333;
+    border: 1px solid #888;
     width: 80%;
     max-width: 500px;
     border-radius: 5px;
-    color: #fff;
 }
 
 .close {
@@ -80,7 +80,7 @@ button:hover {
 
 .close:hover,
 .close:focus {
-    color: white;
+    color: black;
     text-decoration: none;
     cursor: pointer;
 }
@@ -91,10 +91,6 @@ input[type="number"] {
     padding: 8px;
     margin: 5px 0;
     box-sizing: border-box;
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 5px;
 }
 
 label {
