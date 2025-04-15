@@ -7,7 +7,15 @@ body {
 button {
     padding: 8px 16px;
     margin: 5px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
+}
+
+button:hover {
+    background-color: #555;
 }
 
 /* 设备列表样式 */
@@ -18,11 +26,9 @@ button {
 
 #deviceList li {
     margin: 10px 0;
-    border: 1px solid #ccc;
+    border: 1px solid #333;
     padding: 10px;
     border-radius: 5px;
-    display: flex;
-    align-items: center;
 }
 
 /* 选择标志样式 */
@@ -37,15 +43,7 @@ button {
 }
 
 .select-marker.selected {
-    background-color: #000;
-}
-
-/* 设备图片小图标样式 */
-.device-image-icon {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    margin-right: 10px;
+    background-color: #fff;
 }
 
 /* 弹窗样式 */
@@ -62,10 +60,10 @@ button {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: #111;
     margin: 15% auto;
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px solid #333;
     width: 80%;
     max-width: 500px;
     border-radius: 5px;
@@ -80,7 +78,7 @@ button {
 
 .close:hover,
 .close:focus {
-    color: black;
+    color: white;
     text-decoration: none;
     cursor: pointer;
 }
@@ -91,6 +89,10 @@ input[type="number"] {
     padding: 8px;
     margin: 5px 0;
     box-sizing: border-box;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
 }
 
 label {
