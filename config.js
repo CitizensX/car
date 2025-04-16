@@ -4,7 +4,6 @@ let deviceConfigs = [];
 // 加载设备列表
 function loadDeviceList() {
     const deviceConfigS = localStorage.getItem('DeviceConfigS');
-    const selectedDevice = JSON.parse(localStorage.getItem('DeviceConfig') || '{}');
     if (deviceConfigS) {
         deviceConfigs = JSON.parse(deviceConfigS);
         const deviceList = document.getElementById('deviceList');
@@ -31,10 +30,6 @@ function loadDeviceList() {
                 selectMarker.classList.toggle('selected');
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
             });
-
-            if (selectedDevice.device_name === device.device_name) {
-                selectMarker.classList.add('selected');
-            }
 
             deviceList.appendChild(listItem);
         });
@@ -77,6 +72,7 @@ function addDevice() {
     const lockDataInterface = document.getElementById('lockDataInterface').value;
     const startDataInterface = document.getElementById('startDataInterface').value;
     const windowDataInterface = document.getElementById('windowDataInterface').value;
+
     const newDevice = {
         device_image: deviceImage,
         device_name: deviceName,
@@ -90,40 +86,45 @@ function addDevice() {
         device_StartDataInterface: startDataInterface,
         device_WindowDataInterface: windowDataInterface
     };
-    
+
     deviceConfigs.push(newDevice);
     localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
     closeAddDeviceModal();
     loadDeviceList();
 }
-    // 打开用户配置弹窗
-    function openUserConfigModal() {
+
+// 打开用户配置弹窗
+function openUserConfigModal() {
     const userConfigModal = document.getElementById('userConfigModal');
     userConfigModal.style.display = 'block';
-    }
-    // 关闭用户配置弹窗
-    function closeUserConfigModal() {
+}
+
+// 关闭用户配置弹窗
+function closeUserConfigModal() {
     const userConfigModal = document.getElementById('userConfigModal');
     userConfigModal.style.display = 'none';
-    }
-    // 确定用户配置
-    function userConfig() {
+}
+
+// 确定用户配置
+function userConfig() {
     const clientId = document.getElementById('clientId').value;
     const clientSecret = document.getElementById('clientSecret').value;
     const userName = document.getElementById('userName').value;
     const userPassword = document.getElementById('userPassword').value;
+
     const userConfigData = {
         client_id: clientId,
         client_secret: clientSecret,
         user_name: userName,
         user_password: userPassword
     };
-    
+
     localStorage.setItem('UserConfig', JSON.stringify(userConfigData));
     closeUserConfigModal();
-    }
-    // 打开修改设备弹窗
-    function openEditDeviceModal(index) {
+}
+
+// 打开修改设备弹窗
+function openEditDeviceModal(index) {
     const editDeviceModal = document.getElementById('editDeviceModal');
     const device = deviceConfigs[index];
     // 这里不处理图片的回显，因为图片选择后是临时URL，保存后再加载显示
@@ -137,26 +138,18 @@ function addDevice() {
     document.getElementById('editLockDataInterface').value = device.device_LockDataInterface;
     document.getElementById('editStartDataInterface').value = device.device_StartDataInterface;
     document.getElementById('editWindowDataInterface').value = device.device_WindowDataInterface;
+
     editDeviceModal.style.display = 'block';
-    }
-    // 关闭修改设备弹窗
-    function closeEditDeviceModal() {
+}
+
+// 关闭修改设备弹窗
+function closeEditDeviceModal() {
     const editDeviceModal = document.getElementById('editDeviceModal');
     editDeviceModal.style.display = 'none';
-    // 清空输入框内容
-    document.getElementById('editDeviceName').value = '';
-    document.getElementById('editDeviceId').value = '';
-    document.getElementById('editDeviceKey').value = '';
-    document.getElementById('editLockSignalValue').value = '';
-    document.getElementById('editVoltageDataInterface').value = '';
-    document.getElementById('editTemperatureDataInterface').value = '';
-    document.getElementById('editHumidityDataInterface').value = '';
-    document.getElementById('editLockDataInterface').value = '';
-    document.getElementById('editStartDataInterface').value = '';
-    document.getElementById('editWindowDataInterface').value = '';
-    }
-    // 确定修改设备
-    function editDevice(index) {
+}
+
+// 确定修改设备
+function editDevice(index) {
     const deviceImage = document.getElementById('editDeviceImage').files[0]? URL.createObjectURL(document.getElementById('editDeviceImage').files[0]) : deviceConfigs[index].device_image;
     const deviceName = document.getElementById('editDeviceName').value;
     const deviceId = document.getElementById('editDeviceId').value;
@@ -168,6 +161,7 @@ function addDevice() {
     const lockDataInterface = document.getElementById('editLockDataInterface').value;
     const startDataInterface = document.getElementById('editStartDataInterface').value;
     const windowDataInterface = document.getElementById('editWindowDataInterface').value;
+
     const editedDevice = {
         device_image: deviceImage,
         device_name: deviceName,
@@ -181,19 +175,20 @@ function addDevice() {
         device_StartDataInterface: startDataInterface,
         device_WindowDataInterface: windowDataInterface
     };
-    
+
     deviceConfigs[index] = editedDevice;
     localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
-    localStorage.setItem('DeviceConfig', JSON.stringify(editedDevice)); // 更新当前选中的设备配置
     closeEditDeviceModal();
     loadDeviceList(); // 修改设备后重新加载设备列表，更新设备名称显示
 }
+
 // 删除设备
 function deleteDevice(index) {
     deviceConfigs.splice(index, 1);
     localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
     loadDeviceList();
 }
+
 // 初始化事件绑定
 function init() {
     const addDeviceBtn = document.getElementById('addDeviceBtn');
@@ -207,18 +202,57 @@ function init() {
     const editDeviceConfirmBtn = document.getElementById('editDeviceConfirmBtn');
     const editDeviceCancelBtn = document.getElementById('editDeviceCancelBtn');
     const closeEditDeviceModalBtn = document.getElementById('closeEditDeviceModal');
+
     addDeviceBtn.addEventListener('click', openAddDeviceModal);
     userConfigBtn.addEventListener('click', openUserConfigModal);
     addDeviceConfirmBtn.addEventListener('click', addDevice);
-    addDeviceCancelBtn.addEventListener('click', closeAddDeviceModal);
+    addDeviceCancelBtn.addEventListener('click', () => {
+        closeAddDeviceModal();
+        // 清空输入框内容
+        document.getElementById('deviceName').value = '';
+        document.getElementById('deviceId').value = '';
+        document.getElementById('deviceKey').value = '';
+        document.getElementById('lockSignalValue').value = '';
+        document.getElementById('voltageDataInterface').value = '';
+        document.getElementById('temperatureDataInterface').value = '';
+        document.getElementById('humidityDataInterface').value = '';
+        document.getElementById('lockDataInterface').value = '';
+        document.getElementById('startDataInterface').value = '';
+        document.getElementById('windowDataInterface').value = '';
+    });
     userConfigConfirmBtn.addEventListener('click', userConfig);
-    userConfigCancelBtn.addEventListener('click', closeUserConfigModal);
+    userConfigCancelBtn.addEventListener('click', () => {
+        closeUserConfigModal();
+        document.getElementById('clientId').value = '';
+        document.getElementById('clientSecret').value = '';
+        document.getElementById('userName').value = '';
+        document.getElementById('userPassword').value = '';
+    });
     closeAddDeviceModalBtn.addEventListener('click', closeAddDeviceModal);
     closeUserConfigModalBtn.addEventListener('click', closeUserConfigModal);
-    editDeviceConfirmBtn.addEventListener('click', () => editDevice(Array.from(document.querySelectorAll('li')).indexOf(event.target.closest('li'))));
-    editDeviceCancelBtn.addEventListener('click', closeEditDeviceModal);
+    editDeviceConfirmBtn.addEventListener('click', function () {
+        const targetIndex = Array.from(document.querySelectorAll('li')).indexOf(event.target.closest('li'));
+        if (targetIndex!== -1) {
+            editDevice(targetIndex);
+        }
+    });
+    editDeviceCancelBtn.addEventListener('click', () => {
+        closeEditDeviceModal();
+        // 这里可以考虑在关闭修改弹窗时，将输入框恢复为修改前的值，不过当前逻辑是直接清空
+        document.getElementById('editDeviceName').value = '';
+        document.getElementById('editDeviceId').value = '';
+        document.getElementById('editDeviceKey').value = '';
+        document.getElementById('editLockSignalValue').value = '';
+        document.getElementById('editVoltageDataInterface').value = '';
+        document.getElementById('editTemperatureDataInterface').value = '';
+        document.getElementById('editHumidityDataInterface').value = '';
+        document.getElementById('editLockDataInterface').value = '';
+        document.getElementById('editStartDataInterface').value = '';
+        document.getElementById('editWindowDataInterface').value = '';
+    });
     closeEditDeviceModalBtn.addEventListener('click', closeEditDeviceModal);
 
     loadDeviceList();
 }
+
 window.onload = init;
