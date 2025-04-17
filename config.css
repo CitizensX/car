@@ -1,11 +1,21 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: black;
-    color: white;
+    background-color: #000;
+    color: #fff;
 }
+
 button {
     padding: 8px 16px;
     margin: 5px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #555;
 }
 
 /* 设备列表样式 */
@@ -16,9 +26,10 @@ button {
 
 #deviceList li {
     margin: 10px 0;
-    border: 1px solid #ccc;
+    border: 1px solid #333;
     padding: 10px;
     border-radius: 5px;
+    background-color: #111;
 }
 
 /* 选择标志样式 */
@@ -26,14 +37,14 @@ button {
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid #ccc;
+    border: 2px solid #333;
     border-radius: 50%;
     margin-right: 10px;
     vertical-align: middle;
 }
 
 .select-marker.selected {
-    background-color: #000;
+    background-color: #fff;
 }
 
 /* 弹窗样式 */
@@ -50,13 +61,14 @@ button {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: #111;
     margin: 15% auto;
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px solid #333;
     width: 80%;
     max-width: 500px;
     border-radius: 5px;
+    color: #fff;
 }
 
 .close {
@@ -68,7 +80,7 @@ button {
 
 .close:hover,
 .close:focus {
-    color: black;
+    color: white;
     text-decoration: none;
     cursor: pointer;
 }
@@ -79,9 +91,14 @@ input[type="number"] {
     padding: 8px;
     margin: 5px 0;
     box-sizing: border-box;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 5px;
 }
 
 label {
     display: block;
     margin-bottom: 5px;
 }
+    
