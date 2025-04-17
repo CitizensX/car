@@ -38,7 +38,7 @@ function loadDeviceList() {
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
             });
 
-            if (currentDeviceConfig && currentDeviceConfig.device_name === device.device_name) {
+            if (currentDeviceConfig && currentDeviceConfig.device_id === device.device_id) {
                 selectMarker.classList.add('selected');
             }
 
