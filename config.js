@@ -1,3 +1,4 @@
+//config.js
 // 全局变量
 let deviceConfigs = [];
 
@@ -9,12 +10,7 @@ function loadDeviceList() {
         const deviceList = document.getElementById('deviceList');
         deviceList.innerHTML = '';
         const currentDeviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
-        console.log('读取的 DeviceConfig:', currentDeviceConfig);
-        if (currentDeviceConfig) {
-            console.log('读取的设备 ID:', currentDeviceConfig.device_id);
-        }
         deviceConfigs.forEach((device, index) => {
-            console.log('设备列表中的设备 ID:', device.device_id);
             const listItem = document.createElement('li');
             const selectMarker = document.createElement('span');
             selectMarker.classList.add('select-marker');
@@ -40,12 +36,10 @@ function loadDeviceList() {
                 });
                 // 添加当前点击设备的选择效果
                 selectMarker.classList.add('selected');
-                console.log('保存的设备 ID:', device.device_id);
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
-                console.log('保存后的 DeviceConfig:', localStorage.getItem('DeviceConfig'));
             });
 
-            if (currentDeviceConfig && currentDeviceConfig.device_id === device.device_id) {
+            if (currentDeviceConfig && currentDeviceConfig.device_name === device.device_name) {
                 selectMarker.classList.add('selected');
             }
 
@@ -165,8 +159,14 @@ function addDevice() {
 function openUserConfigModal() {
     const userConfigModal = document.getElementById('userConfigModal');
     userConfigModal.style.display = 'block';
-    // 清空输入框内容
-    clearUserConfigInputs();
+    // 加载保存的用户配置内容
+    const userConfigData = JSON.parse(localStorage.getItem('UserConfig'));
+    if (userConfigData) {
+        document.getElementById('clientId').value = userConfigData.client_id;
+        document.getElementById('clientSecret').value = userConfigData.client_secret;
+        document.getElementById('userName').value = userConfigData.user_name;
+        document.getElementById('userPassword').value = userConfigData.user_password;
+    }
 }
 
 // 关闭用户配置弹窗
@@ -407,4 +407,5 @@ function init() {
     });
 }
 
-window.onload = init;    
+window.onload = init;
+    

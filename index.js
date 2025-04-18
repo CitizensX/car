@@ -19,8 +19,12 @@ let ws;
 
 // 检查配置文件并读取内容
 function checkConfigFiles() {
+    const deviceConfigS = localStorage.getItem('DeviceConfigS');
+    console.log('DeviceConfigS:', deviceConfigS);
     const deviceConfig = localStorage.getItem('DeviceConfig');
+    console.log('DeviceConfig:', deviceConfig);
     const userConfig = localStorage.getItem('UserConfig');
+    console.log('UserConfig:', userConfig);
 
     if (!deviceConfig || !userConfig) {
         window.location.href = 'config.html';
