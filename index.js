@@ -83,13 +83,15 @@ function connectWebSocket() {
     ws = new WebSocket('wss://www.bigiot.net:8484');
     ws.onopen = () => {
         console.log('WebSocket 连接成功');
-        login();
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.M === 'loginok') {
-            // 每 3 秒发送沟通指令数据
-            setInterval(sendCommunicationCommand, 3000);
+        console.log('服务器数据:',data);
+        if (data.M === 'WELCOME TO BIGIOT') {
+            login();
+        } else if (data.M === 'loginok') {
+                // 每 3 秒发送沟通指令数据
+            setInterval(() => SendSayData("00"), 3000);
             // 每 10 秒检查设备连接状态
             setInterval(checkDeviceConnection, 10000);
         } else if (data.M === 'say' && data.SIGN === 'S') {
@@ -117,18 +119,20 @@ function login() {
         ID: user_name,
         K: user_password
     });
+    console.log('login:',loginData);
     ws.send(loginData);
 }
 
 // 发送沟通指令数据
-function sendCommunicationCommand() {
-    const commandData = JSON.stringify({
+function SendSayData(data) {
+    const SendData = JSON.stringify({
         M: 'say',
-        ID: device_id,
-        C: '00'
+        ID: `D${device_id}`,
+        C: data
     });
     if (ws.readyState === WebSocket.OPEN) {
-        ws.send(commandData);
+        console.log('SendData:',SendData);
+        ws.send(SendData);
     }
 }
 
@@ -206,52 +210,27 @@ function disableButtons() {
 // 按钮点击事件
 lockButton.addEventListener('click', () => {
     if (!isConnected) return;
-    const commandData = JSON.stringify({
-        M: 'say',
-        ID: device_id,
-        C: lockButton.textContent === '解锁' ? '001' : '011'
-    });
-    ws.send(commandData);
+    SendSayData(lockButton.textContent === '解锁' ? '001' : '011');
 });
 
 startButton.addEventListener('click', () => {
     if (!isConnected) return;
-    const commandData = JSON.stringify({
-        M: 'say',
-        ID: device_id,
-        C: startButton.textContent === '启动' ? '002' : '012'
-    });
-    ws.send(commandData);
+    SendSayData(startButton.textContent === '启动' ? '002' : '012');
 });
 
 trunkButton.addEventListener('click', () => {
     if (!isConnected) return;
-    const commandData = JSON.stringify({
-        M: 'say',
-        ID: device_id,
-        C: trunkButton.textContent === '打开尾箱' ? '003' : '013'
-    });
-    ws.send(commandData);
+    SendSayData(trunkButton.textContent === '打开尾箱' ? '003' : '013');
 });
 
 findCarButton.addEventListener('click', () => {
     if (!isConnected) return;
-    const commandData = JSON.stringify({
-        M: 'say',
-        ID: device_id,
-        C: findCarButton.textContent === '打开寻车' ? '004' : '014'
-    });
-    ws.send(commandData);
+    SendSayData(findCarButton.textContent === '打开寻车' ? '004' : '014');
 });
 
 windowButton.addEventListener('click', () => {
     if (!isConnected) return;
-    const commandData = JSON.stringify({
-        M: 'say',
-        ID: device_id,
-        C: windowButton.textContent === '开窗' ? '005' : '015'
-    });
-    ws.send(commandData);
+    SendSayData(windowButton.textContent === '开窗' ? '005' : '015');
 });
 
 // 页面加载
