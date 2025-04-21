@@ -207,7 +207,6 @@ function userConfig() {
 function openEditDeviceModal(index) {
     const editDeviceModal = document.getElementById('editDeviceModal');
     const device = deviceConfigs[index];
-    // 这里不处理图片的回显，因为图片选择后是临时URL，保存后再加载显示
     document.getElementById('editDeviceName').value = device.device_name;
     document.getElementById('editDeviceId').value = device.device_id;
     document.getElementById('editDeviceKey').value = device.device_key;

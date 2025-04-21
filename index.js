@@ -12,6 +12,8 @@ const voltageDisplay = document.getElementById('voltage');
 const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
 const offlineOverlay = document.getElementById('offline-overlay');
+const carImage = document.getElementById('car-image');
+const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
 
 let lastDataTime = Date.now();
 let isConnected = false;
@@ -70,12 +72,36 @@ function checkConfigFiles() {
         return;
     }
 
+    // 设置设备名称
+    if (deviceNameDisplay) {
+        deviceNameDisplay.textContent = device_name;
+    }
+
     // 设置汽车图片
-    const carImage = document.getElementById('car-image');
-    carImage.src = device_image;
+    setCarImage();
 
     // 连接 WebSocket
     connectWebSocket();
+}
+
+// 设置汽车图片
+function setCarImage() {
+    if (device_image) {
+        let imageUrl = device_image;
+        // 检查是否为Base64编码的图片URL
+        if (!device_image.startsWith('data:')) {
+            // 添加时间戳避免缓存问题
+            const timestamp = new Date().getTime();
+            imageUrl = `${device_image}?t=${timestamp}`;
+        }
+        carImage.src = imageUrl;
+        carImage.onerror = function () {
+            // 图片加载失败时重试
+            setTimeout(() => {
+                setCarImage();
+            }, 3000);
+        };
+    }
 }
 
 // WebSocket 连接
@@ -86,11 +112,11 @@ function connectWebSocket() {
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('服务器数据:',data);
+        console.log('服务器数据:', data);
         if (data.M === 'WELCOME TO BIGIOT') {
             login();
         } else if (data.M === 'loginok') {
-                // 每 3 秒发送沟通指令数据
+            // 每 3 秒发送沟通指令数据
             setInterval(() => SendSayData("00"), 3000);
             // 每 10 秒检查设备连接状态
             setInterval(checkDeviceConnection, 10000);
@@ -119,7 +145,7 @@ function login() {
         ID: user_name,
         K: user_password
     });
-    console.log('login:',loginData);
+    console.log('login:', loginData);
     ws.send(loginData);
 }
 
@@ -131,7 +157,7 @@ function SendSayData(data) {
         C: data
     });
     if (ws.readyState === WebSocket.OPEN) {
-        console.log('SendData:',SendData);
+        console.log('SendData:', SendData);
         ws.send(SendData);
     }
 }
@@ -233,10 +259,26 @@ windowButton.addEventListener('click', () => {
     SendSayData(windowButton.textContent === '开窗' ? '005' : '015');
 });
 
+// 长按设备名称跳转配置页面
+if (deviceNameDisplay) {
+    let pressTimer;
+    deviceNameDisplay.addEventListener('mousedown', () => {
+        pressTimer = setTimeout(() => {
+            window.location.href = 'config.html';
+        }, 1000); // 长按1秒触发
+    });
+    deviceNameDisplay.addEventListener('mouseup', () => {
+        clearTimeout(pressTimer);
+    });
+    deviceNameDisplay.addEventListener('mouseout', () => {
+        clearTimeout(pressTimer);
+    });
+}
+
 // 页面加载
 window.onload = function () {
     checkConfigFiles();
     isConnected = false;
     offlineOverlay.style.display = 'flex';
     disableButtons();
-};
+};    
