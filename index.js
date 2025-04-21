@@ -1,3 +1,4 @@
+//index.js
 // 全局变量
 let client_id, client_secret, user_name, user_password;
 let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface, device_image;
@@ -11,7 +12,6 @@ const windowButton = document.getElementById('window-button');
 const voltageDisplay = document.getElementById('voltage');
 const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
-const offlineOverlay = document.getElementById('offline-overlay');
 const carImage = document.getElementById('car-image');
 const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
 
@@ -101,6 +101,8 @@ function setCarImage() {
                 setCarImage();
             }, 3000);
         };
+    } else {
+        carImage.style.display = 'none';
     }
 }
 
@@ -127,13 +129,11 @@ function connectWebSocket() {
     ws.onclose = () => {
         console.log('WebSocket 连接关闭');
         isConnected = false;
-        offlineOverlay.style.display = 'flex';
         disableButtons();
     };
     ws.onerror = (error) => {
         console.error('WebSocket 连接错误', error);
         isConnected = false;
-        offlineOverlay.style.display = 'flex';
         disableButtons();
     };
 }
@@ -165,7 +165,6 @@ function SendSayData(data) {
 // 解析设备返回数据
 function parseDeviceResponse(response) {
     isConnected = true;
-    offlineOverlay.style.display = 'none';
     enableButtons();
 
     const [
@@ -210,7 +209,6 @@ function updateButtonState(button, state, text1, text2, color1, color2, specialC
 function checkDeviceConnection() {
     if (Date.now() - lastDataTime > 10000) {
         isConnected = false;
-        offlineOverlay.style.display = 'flex';
         disableButtons();
     }
 }
@@ -259,19 +257,21 @@ windowButton.addEventListener('click', () => {
     SendSayData(windowButton.textContent === '开窗' ? '005' : '015');
 });
 
-// 长按设备名称跳转配置页面
+// 5 秒内点击 5 次设备名称跳转配置页面
 if (deviceNameDisplay) {
-    let pressTimer;
-    deviceNameDisplay.addEventListener('mousedown', () => {
-        pressTimer = setTimeout(() => {
-            window.location.href = 'config.html';
-        }, 1000); // 长按1秒触发
-    });
-    deviceNameDisplay.addEventListener('mouseup', () => {
-        clearTimeout(pressTimer);
-    });
-    deviceNameDisplay.addEventListener('mouseout', () => {
-        clearTimeout(pressTimer);
+    let clickCount = 0;
+    let lastClickTime = 0;
+    deviceNameDisplay.addEventListener('click', () => {
+        const currentTime = Date.now();
+        if (currentTime - lastClickTime < 5000) {
+            clickCount++;
+            if (clickCount === 5) {
+                window.location.href = 'config.html';
+            }
+        } else {
+            clickCount = 1;
+        }
+        lastClickTime = currentTime;
     });
 }
 
@@ -279,6 +279,5 @@ if (deviceNameDisplay) {
 window.onload = function () {
     checkConfigFiles();
     isConnected = false;
-    offlineOverlay.style.display = 'flex';
     disableButtons();
-};    
+};        

@@ -14,16 +14,39 @@ function loadDeviceList() {
             const listItem = document.createElement('li');
             const selectMarker = document.createElement('span');
             selectMarker.classList.add('select-marker');
+            // 创建图片元素
+            const deviceImage = document.createElement('img');
+            // 调整图片样式，使其高度达到设备名称字体大小的3行
+            deviceImage.style.maxHeight = 'calc(3 * 1em)';
+            deviceImage.style.maxWidth = 'auto';
+            deviceImage.style.marginRight = '10px';
+            // 添加垂直居中样式
+            deviceImage.style.verticalAlign = 'middle';
+            if (device.device_image) {
+                deviceImage.src = device.device_image;
+            }
+
             const deviceName = document.createElement('span');
             deviceName.textContent = device.device_name;
+            // 添加垂直居中样式
+            deviceName.style.verticalAlign = 'middle';
             const editBtn = document.createElement('button');
             editBtn.textContent = '修改';
-            editBtn.addEventListener('click', () => openEditDeviceModal(index));
+            editBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                openEditDeviceModal(index);
+            });
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = '删除';
-            deleteBtn.addEventListener('click', () => deleteDevice(index));
+            deleteBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                deleteDevice(index);
+            });
 
             listItem.appendChild(selectMarker);
+            if (device.device_image) {
+                listItem.appendChild(deviceImage);
+            }
             listItem.appendChild(deviceName);
             listItem.appendChild(editBtn);
             listItem.appendChild(deleteBtn);
@@ -36,7 +59,10 @@ function loadDeviceList() {
                 });
                 // 添加当前点击设备的选择效果
                 selectMarker.classList.add('selected');
+                // 修改这里，将设备图片信息也保存到 DeviceConfig 中
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
+                // 跳转到 index 页面
+                window.location.href = 'index.html';
             });
 
             if (currentDeviceConfig && currentDeviceConfig.device_name === device.device_name) {
@@ -84,15 +110,20 @@ function clearAddDeviceInputs() {
 
 // 确定添加设备
 function addDevice() {
+    const deviceName = document.getElementById('deviceName').value;
+    const deviceId = document.getElementById('deviceId').value;
+    const deviceKey = document.getElementById('deviceKey').value;
+    // 验证设备名称、设备ID和设备Key是否为空
+    if (deviceName === '' || deviceId === '' || deviceKey === '') {
+        alert('设备名称、设备ID和设备Key为必填项！');
+        return;
+    }
     const deviceImageInput = document.getElementById('deviceImage');
     let deviceImage = '';
     if (deviceImageInput.files.length > 0) {
         const reader = new FileReader();
         reader.onload = function (e) {
             deviceImage = e.target.result;
-            const deviceName = document.getElementById('deviceName').value;
-            const deviceId = document.getElementById('deviceId').value;
-            const deviceKey = document.getElementById('deviceKey').value;
             const lockSignalValue = document.getElementById('lockSignalValue').value;
             const voltageDataInterface = document.getElementById('voltageDataInterface').value;
             const temperatureDataInterface = document.getElementById('temperatureDataInterface').value;
@@ -124,9 +155,6 @@ function addDevice() {
         return;
     }
 
-    const deviceName = document.getElementById('deviceName').value;
-    const deviceId = document.getElementById('deviceId').value;
-    const deviceKey = document.getElementById('deviceKey').value;
     const lockSignalValue = document.getElementById('lockSignalValue').value;
     const voltageDataInterface = document.getElementById('voltageDataInterface').value;
     const temperatureDataInterface = document.getElementById('temperatureDataInterface').value;
@@ -207,6 +235,7 @@ function userConfig() {
 function openEditDeviceModal(index) {
     const editDeviceModal = document.getElementById('editDeviceModal');
     const device = deviceConfigs[index];
+    // 这里不处理图片的回显，因为图片选择后是临时URL，保存后再加载显示
     document.getElementById('editDeviceName').value = device.device_name;
     document.getElementById('editDeviceId').value = device.device_id;
     document.getElementById('editDeviceKey').value = device.device_key;
@@ -263,15 +292,20 @@ function clearEditDeviceInputs() {
 function editDevice() {
     const editDeviceModal = document.getElementById('editDeviceModal');
     const index = parseInt(editDeviceModal.dataset.index);
+    const deviceName = document.getElementById('editDeviceName').value;
+    const deviceId = document.getElementById('editDeviceId').value;
+    const deviceKey = document.getElementById('editDeviceKey').value;
+    // 验证设备名称、设备ID和设备Key是否为空
+    if (deviceName === '' || deviceId === '' || deviceKey === '') {
+        alert('设备名称、设备ID和设备Key为必填项！');
+        return;
+    }
     const deviceImageInput = document.getElementById('editDeviceImage');
     let deviceImage = deviceConfigs[index].device_image;
     if (deviceImageInput.files.length > 0) {
         const reader = new FileReader();
         reader.onload = function (e) {
             deviceImage = e.target.result;
-            const deviceName = document.getElementById('editDeviceName').value;
-            const deviceId = document.getElementById('editDeviceId').value;
-            const deviceKey = document.getElementById('editDeviceKey').value;
             const lockSignalValue = document.getElementById('editLockSignalValue').value;
             const voltageDataInterface = document.getElementById('editVoltageDataInterface').value;
             const temperatureDataInterface = document.getElementById('editTemperatureDataInterface').value;
@@ -296,6 +330,11 @@ function editDevice() {
 
             deviceConfigs[index] = editedDevice;
             localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
+            // 检查修改的是否是当前选中的设备
+            const currentDeviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
+            if (currentDeviceConfig && currentDeviceConfig.device_id === deviceId) {
+                localStorage.setItem('DeviceConfig', JSON.stringify(editedDevice));
+            }
             closeEditDeviceModal();
             loadDeviceList();
         };
@@ -303,9 +342,6 @@ function editDevice() {
         return;
     }
 
-    const deviceName = document.getElementById('editDeviceName').value;
-    const deviceId = document.getElementById('editDeviceId').value;
-    const deviceKey = document.getElementById('editDeviceKey').value;
     const lockSignalValue = document.getElementById('editLockSignalValue').value;
     const voltageDataInterface = document.getElementById('editVoltageDataInterface').value;
     const temperatureDataInterface = document.getElementById('editTemperatureDataInterface').value;
@@ -330,6 +366,11 @@ function editDevice() {
 
     deviceConfigs[index] = editedDevice;
     localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
+    // 检查修改的是否是当前选中的设备
+    const currentDeviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
+    if (currentDeviceConfig && currentDeviceConfig.device_id === deviceId) {
+        localStorage.setItem('DeviceConfig', JSON.stringify(editedDevice));
+    }
     closeEditDeviceModal();
     loadDeviceList();
 }
@@ -371,6 +412,10 @@ function init() {
 
     // 添加设备图片选择事件
     const deviceImageInput = document.getElementById('deviceImage');
+    const addDeviceImageButton = document.getElementById('addDeviceImageButton');
+    addDeviceImageButton.addEventListener('click', function () {
+        deviceImageInput.click();
+    });
     deviceImageInput.addEventListener('change', function () {
         const addDeviceImagePreview = document.getElementById('addDeviceImagePreview');
         const file = this.files[0];
@@ -389,6 +434,10 @@ function init() {
 
     // 修改设备图片选择事件
     const editDeviceImageInput = document.getElementById('editDeviceImage');
+    const editDeviceImageButton = document.getElementById('editDeviceImageButton');
+    editDeviceImageButton.addEventListener('click', function () {
+        editDeviceImageInput.click();
+    });
     editDeviceImageInput.addEventListener('change', function () {
         const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
         const file = this.files[0];
@@ -406,5 +455,4 @@ function init() {
     });
 }
 
-window.onload = init;
-    
+window.onload = init;    

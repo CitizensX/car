@@ -19,7 +19,10 @@
             <span class="close" id="closeAddDeviceModal">&times;</span>
             <h2>添加设备</h2>
             <label for="deviceImage">设备图片：</label>
-            <input type="file" id="deviceImage" accept="image/*">
+            <div class="custom-file-input">
+                <input type="file" id="deviceImage" accept="image/*" style="display: none;">
+                <button id="addDeviceImageButton">选择设备图片</button>
+            </div>
             <img id="addDeviceImagePreview" style="display: none; max-width: 100px; max-height: 100px;" />
             <label for="deviceName">设备名称：</label>
             <input type="text" id="deviceName" placeholder="设备名称">
@@ -70,7 +73,10 @@
             <span class="close" id="closeEditDeviceModal">&times;</span>
             <h2>修改设备</h2>
             <label for="editDeviceImage">设备图片：</label>
-            <input type="file" id="editDeviceImage" accept="image/*">
+            <div class="custom-file-input">
+                <input type="file" id="editDeviceImage" accept="image/*" style="display: none;">
+                <button id="editDeviceImageButton">选择设备图片</button>
+            </div>
             <img id="editDeviceImagePreview" style="display: none; max-width: 100px; max-height: 100px;" />
             <label for="editDeviceName">设备名称：</label>
             <input type="text" id="editDeviceName" placeholder="设备名称">

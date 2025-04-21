@@ -101,4 +101,13 @@ label {
     display: block;
     margin-bottom: 5px;
 }
+
+.custom-file-input {
+    display: inline-block;
+    position: relative;
+}
+
+.custom-file-input button {
+    margin: 0;
+}
     
