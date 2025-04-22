@@ -59,7 +59,6 @@ function loadDeviceList() {
                 });
                 // 添加当前点击设备的选择效果
                 selectMarker.classList.add('selected');
-                // 修改这里，将设备图片信息也保存到 DeviceConfig 中
                 localStorage.setItem('DeviceConfig', JSON.stringify(device));
                 // 跳转到 index 页面
                 window.location.href = 'index.html';
