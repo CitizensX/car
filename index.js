@@ -14,19 +14,33 @@ const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
 const carImage = document.getElementById('car-image');
 const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
+const debugOutput = document.createElement('div');
+debugOutput.classList.add('debug-output');
+carImage.parentNode.insertBefore(debugOutput, carImage.nextSibling);
+let isDebugVisible = false;
 
 let lastDataTime = Date.now();
 let isConnected = false;
 let ws;
 
+// 调试输出函数
+function debugLog(message) {
+    const now = new Date();
+    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const logEntry = document.createElement('p');
+    logEntry.textContent = `${time}: ${message}`;
+    debugOutput.appendChild(logEntry);
+    debugOutput.scrollTop = debugOutput.scrollHeight;
+}
+
 // 检查配置文件并读取内容
 function checkConfigFiles() {
     const deviceConfigS = localStorage.getItem('DeviceConfigS');
-    console.log('DeviceConfigS:', deviceConfigS);
+    debugLog(`DeviceConfigS: ${deviceConfigS}`);
     const deviceConfig = localStorage.getItem('DeviceConfig');
-    console.log('DeviceConfig:', deviceConfig);
+    debugLog(`DeviceConfig: ${deviceConfig}`);
     const userConfig = localStorage.getItem('UserConfig');
-    console.log('UserConfig:', userConfig);
+    debugLog(`UserConfig: ${userConfig}`);
 
     if (!deviceConfig || !userConfig) {
         window.location.href = 'config.html';
@@ -104,17 +118,22 @@ function setCarImage() {
     } else {
         carImage.style.display = 'none';
     }
+    // 根据图片大小设置调试框大小
+    setTimeout(() => {
+        debugOutput.style.width = carImage.offsetWidth + 'px';
+        debugOutput.style.height = carImage.offsetHeight + 'px';
+    }, 0);
 }
 
 // WebSocket 连接
 function connectWebSocket() {
     ws = new WebSocket('wss://www.bigiot.net:8484');
     ws.onopen = () => {
-        console.log('WebSocket 连接成功');
+        debugLog('WebSocket 连接成功');
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('服务器数据:', data);
+        debugLog(`服务器数据: ${JSON.stringify(data)}`);
         if (data.M === 'WELCOME TO BIGIOT') {
             login();
         } else if (data.M === 'loginok') {
@@ -127,12 +146,12 @@ function connectWebSocket() {
         }
     };
     ws.onclose = () => {
-        console.log('WebSocket 连接关闭');
+        debugLog('WebSocket 连接关闭');
         isConnected = false;
         disableButtons();
     };
     ws.onerror = (error) => {
-        console.error('WebSocket 连接错误', error);
+        debugLog(`WebSocket 连接错误: ${error}`);
         isConnected = false;
         disableButtons();
     };
@@ -145,7 +164,7 @@ function login() {
         ID: user_name,
         K: user_password
     });
-    console.log('login:', loginData);
+    debugLog(`login: ${loginData}`);
     ws.send(loginData);
 }
 
@@ -157,7 +176,7 @@ function SendSayData(data) {
         C: data
     });
     if (ws.readyState === WebSocket.OPEN) {
-        console.log('SendData:', SendData);
+        debugLog(`SendData: ${SendData}`);
         ws.send(SendData);
     }
 }
@@ -275,9 +294,20 @@ if (deviceNameDisplay) {
     });
 }
 
+// 单击图片显示或隐藏调试信息
+carImage.addEventListener('click', () => {
+    isDebugVisible = !isDebugVisible;
+    if (isDebugVisible) {
+        debugOutput.style.display = 'block';
+    } else {
+        debugOutput.style.display = 'none';
+    }
+});
+
 // 页面加载
 window.onload = function () {
     checkConfigFiles();
     isConnected = false;
     disableButtons();
-};        
+    debugOutput.style.display = 'none';
+};    

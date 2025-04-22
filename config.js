@@ -1,4 +1,3 @@
-//config.js
 // 全局变量
 let deviceConfigs = [];
 
@@ -16,9 +15,10 @@ function loadDeviceList() {
             selectMarker.classList.add('select-marker');
             // 创建图片元素
             const deviceImage = document.createElement('img');
-            // 调整图片样式，使其高度达到设备名称字体大小的3行
-            deviceImage.style.maxHeight = 'calc(3 * 1em)';
-            deviceImage.style.maxWidth = 'auto';
+            // 设置固定的宽度和高度
+            deviceImage.style.width = '100px';
+            deviceImage.style.height = '100px';
+            deviceImage.style.objectFit = 'cover';
             deviceImage.style.marginRight = '10px';
             // 添加垂直居中样式
             deviceImage.style.verticalAlign = 'middle';
@@ -51,7 +51,8 @@ function loadDeviceList() {
             listItem.appendChild(editBtn);
             listItem.appendChild(deleteBtn);
 
-            listItem.addEventListener('click', () => {
+            listItem.addEventListener('click', (event) => {
+                event.preventDefault();
                 // 移除所有设备的选择效果
                 const allSelectMarkers = document.querySelectorAll('.select-marker');
                 allSelectMarkers.forEach(marker => {
@@ -454,4 +455,5 @@ function init() {
     });
 }
 
-window.onload = init;    
+window.onload = init;
+    

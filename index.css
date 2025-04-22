@@ -30,6 +30,7 @@ body {
     height: auto;
     border-radius: 0;
     margin-bottom: 20px;
+    position: relative;
 }
 
 .content-area {
@@ -97,6 +98,21 @@ body {
     background-color: #45a049;
 }
 
+.debug-output {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    color: white;
+    padding: 10px;
+    overflow-y: auto;
+    display: none;
+}
+
+.debug-output p {
+    margin: 2px 0;
+}
+
 @media (max-width: 600px) {
     .container {
         width: 100%;
@@ -112,4 +128,4 @@ body {
     .button {
         width: 90%;
     }
-}        
+}    
