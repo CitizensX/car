@@ -1,6 +1,6 @@
 // 全局变量
 let client_id, client_secret, user_name, user_password;
-let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface, device_image;
+let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface;
 let db;
 
 // 获取页面元素
@@ -136,7 +136,6 @@ async function checkConfigFiles() {
             device_LockDataInterface = deviceData.device_LockDataInterface;
             device_StartDataInterface = deviceData.device_StartDataInterface;
             device_WindowDataInterface = deviceData.device_WindowDataInterface;
-            device_image = deviceData.device_image;
 
             if (!device_name || !device_id || !device_key) {
                 window.location.href = 'config.html';

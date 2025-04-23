@@ -115,9 +115,7 @@ function loadDeviceList() {
             });
 
             listItem.appendChild(selectMarker);
-            if (device.device_image) {
-                listItem.appendChild(deviceImage);
-            }
+            listItem.appendChild(deviceImage);
             listItem.appendChild(deviceName);
             listItem.appendChild(editBtn);
             listItem.appendChild(deleteBtn);
@@ -205,7 +203,6 @@ function addDevice() {
             const windowDataInterface = document.getElementById('windowDataInterface').value;
 
             const newDevice = {
-                device_image: null,
                 device_name: deviceName,
                 device_id: deviceId,
                 device_key: deviceKey,
@@ -236,7 +233,6 @@ function addDevice() {
     const windowDataInterface = document.getElementById('windowDataInterface').value;
 
     const newDevice = {
-        device_image: null,
         device_name: deviceName,
         device_id: deviceId,
         device_key: deviceKey,
@@ -390,7 +386,6 @@ function editDevice() {
             const windowDataInterface = document.getElementById('editWindowDataInterface').value;
 
             const editedDevice = {
-                device_image: null,
                 device_name: deviceName,
                 device_id: deviceId,
                 device_key: deviceKey,
@@ -426,7 +421,6 @@ function editDevice() {
     const windowDataInterface = document.getElementById('editWindowDataInterface').value;
 
     const editedDevice = {
-        device_image: null,
         device_name: deviceName,
         device_id: deviceId,
         device_key: deviceKey,
@@ -551,5 +545,4 @@ async function init() {
     }
 }
 
-window.onload = init;
-    
+window.onload = init;    
