@@ -12,11 +12,11 @@ const windowButton = document.getElementById('window-button');
 const voltageDisplay = document.getElementById('voltage');
 const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
-const carImage = document.getElementById('car-image');
 const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
+const carImage = document.getElementById('car-image'); // 恢复获取图片元素
 const debugOutput = document.createElement('div');
 debugOutput.classList.add('debug-output');
-carImage.parentNode.insertBefore(debugOutput, carImage.nextSibling);
+document.body.appendChild(debugOutput);
 let isDebugVisible = false;
 let shouldAutoScroll = true;
 
@@ -151,36 +151,11 @@ async function checkConfigFiles() {
             deviceNameDisplay.textContent = device_name;
         }
 
-        // 设置汽车图片
-        setCarImage();
-
         // 连接 WebSocket
         connectWebSocket();
     } catch (error) {
         console.error('打开 IndexedDB 数据库时出错:', error);
     }
-}
-
-// 设置汽车图片
-function setCarImage() {
-    getDeviceImage(device_name, (imageData) => {
-        if (imageData) {
-            carImage.src = imageData;
-            carImage.onerror = function () {
-                // 图片加载失败时重试
-                setTimeout(() => {
-                    setCarImage();
-                }, 3000);
-            };
-        } else {
-            carImage.style.display = 'none';
-        }
-        // 根据图片大小设置调试框大小
-        setTimeout(() => {
-            debugOutput.style.width = carImage.offsetWidth + 'px';
-            debugOutput.style.height = carImage.offsetHeight + 'px';
-        }, 0);
-    });
 }
 
 // WebSocket 连接
@@ -354,14 +329,16 @@ if (deviceNameDisplay) {
 }
 
 // 单击图片显示或隐藏调试信息
-carImage.addEventListener('click', () => {
-    isDebugVisible = !isDebugVisible;
-    if (isDebugVisible) {
-        debugOutput.style.display = 'block';
-    } else {
-        debugOutput.style.display = 'none';
-    }
-});
+if (carImage) {
+    carImage.addEventListener('click', () => {
+        isDebugVisible = !isDebugVisible;
+        if (isDebugVisible) {
+            debugOutput.style.display = 'block';
+        } else {
+            debugOutput.style.display = 'none';
+        }
+    });
+}
 
 // 监听滚动事件，处理自动滚动
 debugOutput.addEventListener('scroll', () => {
@@ -384,4 +361,4 @@ window.onload = async function () {
     } catch (error) {
         console.error('页面加载时出错:', error);
     }
-};
+};    
