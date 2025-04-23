@@ -31,6 +31,14 @@ function debugLog(message) {
     const logEntry = document.createElement('p');
     logEntry.textContent = `${time}: ${message}`;
     debugOutput.appendChild(logEntry);
+
+    // 添加小的阈值来判断是否滚动到底部
+    const threshold = 5;
+    const isAtBottom = debugOutput.scrollTop + debugOutput.clientHeight >= debugOutput.scrollHeight - threshold;
+    if (isAtBottom) {
+        shouldAutoScroll = true;
+    }
+
     if (shouldAutoScroll) {
         debugOutput.scrollTop = debugOutput.scrollHeight;
     }
@@ -39,11 +47,11 @@ function debugLog(message) {
 // 检查配置文件并读取内容
 function checkConfigFiles() {
     const deviceConfigS = localStorage.getItem('DeviceConfigS');
-    console.log(`DeviceConfigS: ${deviceConfigS}`);
+    debugLog(`DeviceConfigS: ${deviceConfigS}`);
     const deviceConfig = localStorage.getItem('DeviceConfig');
-    console.log(`DeviceConfig: ${deviceConfig}`);
+    debugLog(`DeviceConfig: ${deviceConfig}`);
     const userConfig = localStorage.getItem('UserConfig');
-    console.log(`UserConfig: ${userConfig}`);
+    debugLog(`UserConfig: ${userConfig}`);
 
     if (!deviceConfig || !userConfig) {
         window.location.href = 'config.html';
@@ -309,7 +317,8 @@ carImage.addEventListener('click', () => {
 
 // 监听滚动事件，处理自动滚动
 debugOutput.addEventListener('scroll', () => {
-    const isAtBottom = debugOutput.scrollTop + debugOutput.clientHeight >= debugOutput.scrollHeight;
+    const threshold = 5;
+    const isAtBottom = debugOutput.scrollTop + debugOutput.clientHeight >= debugOutput.scrollHeight - threshold;
     if (isAtBottom) {
         shouldAutoScroll = true;
     } else {
