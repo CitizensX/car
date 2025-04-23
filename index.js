@@ -77,7 +77,7 @@ function debugLog(message) {
     const now = new Date();
     const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const logEntry = document.createElement('p');
-    logEntry.textContent = `${time}: ${message}`;
+    logEntry.textContent = `${time} ${message}`;
     debugOutput.appendChild(logEntry);
 
     // 添加小的阈值来判断是否滚动到底部
@@ -187,7 +187,7 @@ function setCarImage() {
 function connectWebSocket() {
     ws = new WebSocket('wss://www.bigiot.net:8484');
     ws.onopen = () => {
-        debugLog('WebSocket 连接成功');
+        debugLog('WebSocket 已连接');
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -197,14 +197,14 @@ function connectWebSocket() {
         } else if (data.M === 'loginok') {
             // 每 3 秒发送沟通指令数据
             setInterval(() => SendSayData("00"), 3000);
-            // 每 10 秒检查设备连接状态
-            setInterval(checkDeviceConnection, 10000);
-        } else if (data.M === 'say' && data.SIGN === 'S') {
+            // 每 15 秒检查设备连接状态
+            setInterval(checkDeviceConnection, 15000);
+        } else if (data.M === 'say' && data.ID === `D${device_id}` && data.SIGN === 'S') {
             parseDeviceResponse(data.C);
         }
     };
     ws.onclose = () => {
-        debugLog('WebSocket 连接关闭');
+        debugLog('WebSocket 已关闭');
         isConnected = false;
         disableButtons();
     };
@@ -260,7 +260,7 @@ function parseDeviceResponse(response) {
     updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
     updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
     updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
-    debugLog('状态更新');
+    debugLog(`状态更新:${response}`);
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
@@ -285,9 +285,10 @@ function updateButtonState(button, state, text1, text2, color1, color2, specialC
 
 // 检查设备连接状态
 function checkDeviceConnection() {
-    if (Date.now() - lastDataTime > 10000) {
+    if (Date.now() - lastDataTime > 15000) {
         isConnected = false;
         disableButtons();
+        debugLog('设备掉线');
     }
 }
 
@@ -310,30 +311,21 @@ function disableButtons() {
 }
 
 // 按钮点击事件
-lockButton.addEventListener('click', () => {
-    if (!isConnected) return;
-    SendSayData(lockButton.textContent === '解锁' ? '001' : '011');
-});
+function handleButtonClick(button, commandOn, commandOff, actionText) {
+    if (!isConnected) {
+        alert('设备离线');
+        return;
+    }
+    const command = button.textContent.includes(actionText) ? commandOn : commandOff;
+    SendSayData(command);
+    debugLog(`发送${button.textContent}指令-${command}`);
+}
 
-startButton.addEventListener('click', () => {
-    if (!isConnected) return;
-    SendSayData(startButton.textContent === '启动' ? '002' : '012');
-});
-
-trunkButton.addEventListener('click', () => {
-    if (!isConnected) return;
-    SendSayData(trunkButton.textContent === '打开尾箱' ? '003' : '013');
-});
-
-findCarButton.addEventListener('click', () => {
-    if (!isConnected) return;
-    SendSayData(findCarButton.textContent === '打开寻车' ? '004' : '014');
-});
-
-windowButton.addEventListener('click', () => {
-    if (!isConnected) return;
-    SendSayData(windowButton.textContent === '开窗' ? '005' : '015');
-});
+lockButton.addEventListener('click', () => handleButtonClick(lockButton, '001', '011', '解锁'));
+startButton.addEventListener('click', () => handleButtonClick(startButton, '002', '012', '启动'));
+trunkButton.addEventListener('click', () => handleButtonClick(trunkButton, '003', '013', '打开尾箱'));
+findCarButton.addEventListener('click', () => handleButtonClick(findCarButton, '004', '014', '寻车'));
+windowButton.addEventListener('click', () => handleButtonClick(windowButton, '005', '015', '开窗'));
 
 // 5 秒内点击 5 次设备名称跳转配置页面
 if (deviceNameDisplay) {
@@ -385,3 +377,4 @@ window.onload = async function () {
         console.error('页面加载时出错:', error);
     }
 };
+    
