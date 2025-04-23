@@ -107,7 +107,8 @@ body {
     padding: 10px;
     overflow-y: auto;
     display: none;
-    font-size: 10px;
+    font-size: 8px;
+    pointer-events: none;
 }
 
 .debug-output p {
