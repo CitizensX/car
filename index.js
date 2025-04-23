@@ -47,11 +47,11 @@ function debugLog(message) {
 // 检查配置文件并读取内容
 function checkConfigFiles() {
     const deviceConfigS = localStorage.getItem('DeviceConfigS');
-    debugLog(`DeviceConfigS: ${deviceConfigS}`);
+    console.log(`DeviceConfigS: ${deviceConfigS}`);
     const deviceConfig = localStorage.getItem('DeviceConfig');
-    debugLog(`DeviceConfig: ${deviceConfig}`);
+    console.log(`DeviceConfig: ${deviceConfig}`);
     const userConfig = localStorage.getItem('UserConfig');
-    debugLog(`UserConfig: ${userConfig}`);
+    console.log(`UserConfig: ${userConfig}`);
 
     if (!deviceConfig || !userConfig) {
         window.location.href = 'config.html';
@@ -144,7 +144,7 @@ function connectWebSocket() {
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        debugLog(`服务器数据: ${JSON.stringify(data)}`);
+        console.log(`服务器数据: ${JSON.stringify(data)}`);
         if (data.M === 'WELCOME TO BIGIOT') {
             login();
         } else if (data.M === 'loginok') {
@@ -175,7 +175,7 @@ function login() {
         ID: user_name,
         K: user_password
     });
-    debugLog(`login: ${loginData}`);
+    console.log(`login: ${loginData}`);
     ws.send(loginData);
 }
 
@@ -187,7 +187,7 @@ function SendSayData(data) {
         C: data
     });
     if (ws.readyState === WebSocket.OPEN) {
-        debugLog(`SendData: ${SendData}`);
+        console.log(`SendData: ${SendData}`);
         ws.send(SendData);
     }
 }
@@ -213,6 +213,7 @@ function parseDeviceResponse(response) {
     updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
     updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
     updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
+    debugLog('状态更新');
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
