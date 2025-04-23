@@ -111,6 +111,8 @@ body {
 
 .debug-output p {
     margin: 2px 0;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 @media (max-width: 600px) {

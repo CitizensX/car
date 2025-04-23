@@ -18,6 +18,7 @@ const debugOutput = document.createElement('div');
 debugOutput.classList.add('debug-output');
 carImage.parentNode.insertBefore(debugOutput, carImage.nextSibling);
 let isDebugVisible = false;
+let shouldAutoScroll = true;
 
 let lastDataTime = Date.now();
 let isConnected = false;
@@ -30,7 +31,9 @@ function debugLog(message) {
     const logEntry = document.createElement('p');
     logEntry.textContent = `${time}: ${message}`;
     debugOutput.appendChild(logEntry);
-    debugOutput.scrollTop = debugOutput.scrollHeight;
+    if (shouldAutoScroll) {
+        debugOutput.scrollTop = debugOutput.scrollHeight;
+    }
 }
 
 // 检查配置文件并读取内容
@@ -301,6 +304,16 @@ carImage.addEventListener('click', () => {
         debugOutput.style.display = 'block';
     } else {
         debugOutput.style.display = 'none';
+    }
+});
+
+// 监听滚动事件，处理自动滚动
+debugOutput.addEventListener('scroll', () => {
+    const isAtBottom = debugOutput.scrollTop + debugOutput.clientHeight >= debugOutput.scrollHeight;
+    if (isAtBottom) {
+        shouldAutoScroll = true;
+    } else {
+        shouldAutoScroll = false;
     }
 });
 
