@@ -103,7 +103,7 @@ body {
     top: 0;
     left: 0;
     background-color: transparent;
-    color: white;
+    color: rgb(0, 255, 0);
     padding: 10px;
     overflow-y: auto;
     display: none;
