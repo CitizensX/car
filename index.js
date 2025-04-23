@@ -26,24 +26,33 @@ let ws;
 
 // 打开 IndexedDB 数据库
 function openDatabase() {
-    const request = indexedDB.open('DeviceImagesDB', 1);
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('DeviceImagesDB', 1);
 
-    request.onupgradeneeded = function (event) {
-        db = event.target.result;
-        const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
-    };
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+            const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
+        };
 
-    request.onsuccess = function (event) {
-        db = event.target.result;
-    };
+        request.onsuccess = function (event) {
+            db = event.target.result;
+            resolve();
+        };
 
-    request.onerror = function (event) {
-        console.error('IndexedDB 打开失败:', event.target.error);
-    };
+        request.onerror = function (event) {
+            console.error('IndexedDB 打开失败:', event.target.error);
+            reject(event.target.error);
+        };
+    });
 }
 
 // 从 IndexedDB 获取设备图片
 function getDeviceImage(deviceName, callback) {
+    if (!db) {
+        console.error('IndexedDB 数据库未打开');
+        callback(null);
+        return;
+    }
     const transaction = db.transaction(['DeviceImages']);
     const objectStore = transaction.objectStore('DeviceImages');
     const request = objectStore.get(deviceName);
@@ -84,68 +93,73 @@ function debugLog(message) {
 }
 
 // 检查配置文件并读取内容
-function checkConfigFiles() {
-    const deviceConfigS = localStorage.getItem('DeviceConfigS');
-    console.log(`DeviceConfigS: ${deviceConfigS}`);
-    const deviceConfig = localStorage.getItem('DeviceConfig');
-    console.log(`DeviceConfig: ${deviceConfig}`);
-    const userConfig = localStorage.getItem('UserConfig');
-    console.log(`UserConfig: ${userConfig}`);
-
-    if (!deviceConfig || !userConfig) {
-        window.location.href = 'config.html';
-        return;
-    }
-
+async function checkConfigFiles() {
     try {
-        const userData = JSON.parse(userConfig);
-        client_id = userData.client_id;
-        client_secret = userData.client_secret;
-        user_name = userData.user_name;
-        user_password = userData.user_password;
+        await openDatabase();
+        const deviceConfigS = localStorage.getItem('DeviceConfigS');
+        console.log(`DeviceConfigS: ${deviceConfigS}`);
+        const deviceConfig = localStorage.getItem('DeviceConfig');
+        console.log(`DeviceConfig: ${deviceConfig}`);
+        const userConfig = localStorage.getItem('UserConfig');
+        console.log(`UserConfig: ${userConfig}`);
 
-        if (!client_id || !client_secret || !user_password || !user_password) {
+        if (!deviceConfig || !userConfig) {
             window.location.href = 'config.html';
             return;
         }
-    } catch (error) {
-        window.location.href = 'config.html';
-        return;
-    }
 
-    try {
-        const deviceData = JSON.parse(deviceConfig);
-        device_name = deviceData.device_name;
-        device_id = deviceData.device_id;
-        device_key = deviceData.device_key;
-        device_LockSignalValue = deviceData.device_LockSignalValue;
-        device_VoltageDataInterface = deviceData.device_VoltageDataInterface;
-        device_TemperatureDataInterface = deviceData.device_TemperatureDataInterface;
-        device_HumidityDataInterface = deviceData.device_HumidityDataInterface;
-        device_LockDataInterface = deviceData.device_LockDataInterface;
-        device_StartDataInterface = deviceData.device_StartDataInterface;
-        device_WindowDataInterface = deviceData.device_WindowDataInterface;
-        device_image = deviceData.device_image;
+        try {
+            const userData = JSON.parse(userConfig);
+            client_id = userData.client_id;
+            client_secret = userData.client_secret;
+            user_name = userData.user_name;
+            user_password = userData.user_password;
 
-        if (!device_name || !device_id || !device_key) {
+            if (!client_id || !client_secret || !user_password || !user_password) {
+                window.location.href = 'config.html';
+                return;
+            }
+        } catch (error) {
             window.location.href = 'config.html';
             return;
         }
+
+        try {
+            const deviceData = JSON.parse(deviceConfig);
+            device_name = deviceData.device_name;
+            device_id = deviceData.device_id;
+            device_key = deviceData.device_key;
+            device_LockSignalValue = deviceData.device_LockSignalValue;
+            device_VoltageDataInterface = deviceData.device_VoltageDataInterface;
+            device_TemperatureDataInterface = deviceData.device_TemperatureDataInterface;
+            device_HumidityDataInterface = deviceData.device_HumidityDataInterface;
+            device_LockDataInterface = deviceData.device_LockDataInterface;
+            device_StartDataInterface = deviceData.device_StartDataInterface;
+            device_WindowDataInterface = deviceData.device_WindowDataInterface;
+            device_image = deviceData.device_image;
+
+            if (!device_name || !device_id || !device_key) {
+                window.location.href = 'config.html';
+                return;
+            }
+        } catch (error) {
+            window.location.href = 'config.html';
+            return;
+        }
+
+        // 设置设备名称
+        if (deviceNameDisplay) {
+            deviceNameDisplay.textContent = device_name;
+        }
+
+        // 设置汽车图片
+        setCarImage();
+
+        // 连接 WebSocket
+        connectWebSocket();
     } catch (error) {
-        window.location.href = 'config.html';
-        return;
+        console.error('打开 IndexedDB 数据库时出错:', error);
     }
-
-    // 设置设备名称
-    if (deviceNameDisplay) {
-        deviceNameDisplay.textContent = device_name;
-    }
-
-    // 设置汽车图片
-    setCarImage();
-
-    // 连接 WebSocket
-    connectWebSocket();
 }
 
 // 设置汽车图片
@@ -362,11 +376,13 @@ debugOutput.addEventListener('scroll', () => {
 });
 
 // 页面加载
-window.onload = function () {
-    openDatabase();
-    checkConfigFiles();
-    isConnected = false;
-    disableButtons();
-    debugOutput.style.display = 'none';
+window.onload = async function () {
+    try {
+        await checkConfigFiles();
+        isConnected = false;
+        disableButtons();
+        debugOutput.style.display = 'none';
+    } catch (error) {
+        console.error('页面加载时出错:', error);
+    }
 };
-    

@@ -4,24 +4,32 @@ let db;
 
 // 打开 IndexedDB 数据库
 function openDatabase() {
-    const request = indexedDB.open('DeviceImagesDB', 1);
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('DeviceImagesDB', 1);
 
-    request.onupgradeneeded = function (event) {
-        db = event.target.result;
-        const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
-    };
+        request.onupgradeneeded = function (event) {
+            db = event.target.result;
+            const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
+        };
 
-    request.onsuccess = function (event) {
-        db = event.target.result;
-    };
+        request.onsuccess = function (event) {
+            db = event.target.result;
+            resolve();
+        };
 
-    request.onerror = function (event) {
-        console.error('IndexedDB 打开失败:', event.target.error);
-    };
+        request.onerror = function (event) {
+            console.error('IndexedDB 打开失败:', event.target.error);
+            reject(event.target.error);
+        };
+    });
 }
 
 // 存储设备图片到 IndexedDB
 function saveDeviceImage(deviceName, imageData) {
+    if (!db) {
+        console.error('IndexedDB 数据库未打开');
+        return;
+    }
     const transaction = db.transaction(['DeviceImages'], 'readwrite');
     const objectStore = transaction.objectStore('DeviceImages');
     const request = objectStore.put({ deviceName, imageData });
@@ -37,6 +45,11 @@ function saveDeviceImage(deviceName, imageData) {
 
 // 从 IndexedDB 获取设备图片
 function getDeviceImage(deviceName, callback) {
+    if (!db) {
+        console.error('IndexedDB 数据库未打开');
+        callback(null);
+        return;
+    }
     const transaction = db.transaction(['DeviceImages']);
     const objectStore = transaction.objectStore('DeviceImages');
     const request = objectStore.get(deviceName);
@@ -439,6 +452,10 @@ function editDevice() {
 
 // 删除设备
 function deleteDevice(index) {
+    if (!db) {
+        console.error('IndexedDB 数据库未打开');
+        return;
+    }
     const device = deviceConfigs[index];
     const transaction = db.transaction(['DeviceImages'], 'readwrite');
     const objectStore = transaction.objectStore('DeviceImages');
@@ -457,77 +474,81 @@ function deleteDevice(index) {
 }
 
 // 初始化事件绑定
-function init() {
-    openDatabase();
-    const addDeviceBtn = document.getElementById('addDeviceBtn');
-    const userConfigBtn = document.getElementById('userConfigBtn');
-    const addDeviceConfirmBtn = document.getElementById('addDeviceConfirmBtn');
-    const addDeviceCancelBtn = document.getElementById('addDeviceCancelBtn');
-    const userConfigConfirmBtn = document.getElementById('userConfigConfirmBtn');
-    const userConfigCancelBtn = document.getElementById('userConfigCancelBtn');
-    const closeAddDeviceModalBtn = document.getElementById('closeAddDeviceModal');
-    const closeUserConfigModalBtn = document.getElementById('closeUserConfigModal');
-    const editDeviceConfirmBtn = document.getElementById('editDeviceConfirmBtn');
-    const editDeviceCancelBtn = document.getElementById('editDeviceCancelBtn');
-    const closeEditDeviceModalBtn = document.getElementById('closeEditDeviceModal');
+async function init() {
+    try {
+        await openDatabase();
+        const addDeviceBtn = document.getElementById('addDeviceBtn');
+        const userConfigBtn = document.getElementById('userConfigBtn');
+        const addDeviceConfirmBtn = document.getElementById('addDeviceConfirmBtn');
+        const addDeviceCancelBtn = document.getElementById('addDeviceCancelBtn');
+        const userConfigConfirmBtn = document.getElementById('userConfigConfirmBtn');
+        const userConfigCancelBtn = document.getElementById('userConfigCancelBtn');
+        const closeAddDeviceModalBtn = document.getElementById('closeAddDeviceModal');
+        const closeUserConfigModalBtn = document.getElementById('closeUserConfigModal');
+        const editDeviceConfirmBtn = document.getElementById('editDeviceConfirmBtn');
+        const editDeviceCancelBtn = document.getElementById('editDeviceCancelBtn');
+        const closeEditDeviceModalBtn = document.getElementById('closeEditDeviceModal');
 
-    addDeviceBtn.addEventListener('click', openAddDeviceModal);
-    userConfigBtn.addEventListener('click', openUserConfigModal);
-    addDeviceConfirmBtn.addEventListener('click', addDevice);
-    addDeviceCancelBtn.addEventListener('click', closeAddDeviceModal);
-    userConfigConfirmBtn.addEventListener('click', userConfig);
-    userConfigCancelBtn.addEventListener('click', closeUserConfigModal);
-    closeAddDeviceModalBtn.addEventListener('click', closeAddDeviceModal);
-    closeUserConfigModalBtn.addEventListener('click', closeUserConfigModal);
-    editDeviceConfirmBtn.addEventListener('click', editDevice);
-    editDeviceCancelBtn.addEventListener('click', closeEditDeviceModal);
-    closeEditDeviceModalBtn.addEventListener('click', closeEditDeviceModal);
+        addDeviceBtn.addEventListener('click', openAddDeviceModal);
+        userConfigBtn.addEventListener('click', openUserConfigModal);
+        addDeviceConfirmBtn.addEventListener('click', addDevice);
+        addDeviceCancelBtn.addEventListener('click', closeAddDeviceModal);
+        userConfigConfirmBtn.addEventListener('click', userConfig);
+        userConfigCancelBtn.addEventListener('click', closeUserConfigModal);
+        closeAddDeviceModalBtn.addEventListener('click', closeAddDeviceModal);
+        closeUserConfigModalBtn.addEventListener('click', closeUserConfigModal);
+        editDeviceConfirmBtn.addEventListener('click', editDevice);
+        editDeviceCancelBtn.addEventListener('click', closeEditDeviceModal);
+        closeEditDeviceModalBtn.addEventListener('click', closeEditDeviceModal);
 
-    loadDeviceList();
+        loadDeviceList();
 
-    // 添加设备图片选择事件
-    const deviceImageInput = document.getElementById('deviceImage');
-    const addDeviceImageButton = document.getElementById('addDeviceImageButton');
-    addDeviceImageButton.addEventListener('click', function () {
-        deviceImageInput.click();
-    });
-    deviceImageInput.addEventListener('change', function () {
-        const addDeviceImagePreview = document.getElementById('addDeviceImagePreview');
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                addDeviceImagePreview.src = e.target.result;
-                addDeviceImagePreview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            addDeviceImagePreview.src = '';
-            addDeviceImagePreview.style.display = 'none';
-        }
-    });
+        // 添加设备图片选择事件
+        const deviceImageInput = document.getElementById('deviceImage');
+        const addDeviceImageButton = document.getElementById('addDeviceImageButton');
+        addDeviceImageButton.addEventListener('click', function () {
+            deviceImageInput.click();
+        });
+        deviceImageInput.addEventListener('change', function () {
+            const addDeviceImagePreview = document.getElementById('addDeviceImagePreview');
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    addDeviceImagePreview.src = e.target.result;
+                    addDeviceImagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                addDeviceImagePreview.src = '';
+                addDeviceImagePreview.style.display = 'none';
+            }
+        });
 
-    // 修改设备图片选择事件
-    const editDeviceImageInput = document.getElementById('editDeviceImage');
-    const editDeviceImageButton = document.getElementById('editDeviceImageButton');
-    editDeviceImageButton.addEventListener('click', function () {
-        editDeviceImageInput.click();
-    });
-    editDeviceImageInput.addEventListener('change', function () {
-        const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                editDeviceImagePreview.src = e.target.result;
-                editDeviceImagePreview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            editDeviceImagePreview.src = '';
-            editDeviceImagePreview.style.display = 'none';
-        }
-    });
+        // 修改设备图片选择事件
+        const editDeviceImageInput = document.getElementById('editDeviceImage');
+        const editDeviceImageButton = document.getElementById('editDeviceImageButton');
+        editDeviceImageButton.addEventListener('click', function () {
+            editDeviceImageInput.click();
+        });
+        editDeviceImageInput.addEventListener('change', function () {
+            const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    editDeviceImagePreview.src = e.target.result;
+                    editDeviceImagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                editDeviceImagePreview.src = '';
+                editDeviceImagePreview.style.display = 'none';
+            }
+        });
+    } catch (error) {
+        console.error('初始化时出错:', error);
+    }
 }
 
 window.onload = init;
