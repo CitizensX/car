@@ -1,7 +1,7 @@
-//index.js
 // 全局变量
 let client_id, client_secret, user_name, user_password;
 let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface, device_image;
+let db;
 
 // 获取页面元素
 const lockButton = document.getElementById('lock-button');
@@ -23,6 +23,45 @@ let shouldAutoScroll = true;
 let lastDataTime = Date.now();
 let isConnected = false;
 let ws;
+
+// 打开 IndexedDB 数据库
+function openDatabase() {
+    const request = indexedDB.open('DeviceImagesDB', 1);
+
+    request.onupgradeneeded = function (event) {
+        db = event.target.result;
+        const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
+    };
+
+    request.onsuccess = function (event) {
+        db = event.target.result;
+    };
+
+    request.onerror = function (event) {
+        console.error('IndexedDB 打开失败:', event.target.error);
+    };
+}
+
+// 从 IndexedDB 获取设备图片
+function getDeviceImage(deviceName, callback) {
+    const transaction = db.transaction(['DeviceImages']);
+    const objectStore = transaction.objectStore('DeviceImages');
+    const request = objectStore.get(deviceName);
+
+    request.onsuccess = function () {
+        const result = request.result;
+        if (result) {
+            callback(result.imageData);
+        } else {
+            callback(null);
+        }
+    };
+
+    request.onerror = function (event) {
+        console.error('设备图片获取失败:', event.target.error);
+        callback(null);
+    };
+}
 
 // 调试输出函数
 function debugLog(message) {
@@ -111,29 +150,24 @@ function checkConfigFiles() {
 
 // 设置汽车图片
 function setCarImage() {
-    if (device_image) {
-        let imageUrl = device_image;
-        // 检查是否为Base64编码的图片URL
-        if (!device_image.startsWith('data:')) {
-            // 添加时间戳避免缓存问题
-            const timestamp = new Date().getTime();
-            imageUrl = `${device_image}?t=${timestamp}`;
+    getDeviceImage(device_name, (imageData) => {
+        if (imageData) {
+            carImage.src = imageData;
+            carImage.onerror = function () {
+                // 图片加载失败时重试
+                setTimeout(() => {
+                    setCarImage();
+                }, 3000);
+            };
+        } else {
+            carImage.style.display = 'none';
         }
-        carImage.src = imageUrl;
-        carImage.onerror = function () {
-            // 图片加载失败时重试
-            setTimeout(() => {
-                setCarImage();
-            }, 3000);
-        };
-    } else {
-        carImage.style.display = 'none';
-    }
-    // 根据图片大小设置调试框大小
-    setTimeout(() => {
-        debugOutput.style.width = carImage.offsetWidth + 'px';
-        debugOutput.style.height = carImage.offsetHeight + 'px';
-    }, 0);
+        // 根据图片大小设置调试框大小
+        setTimeout(() => {
+            debugOutput.style.width = carImage.offsetWidth + 'px';
+            debugOutput.style.height = carImage.offsetHeight + 'px';
+        }, 0);
+    });
 }
 
 // WebSocket 连接
@@ -329,8 +363,10 @@ debugOutput.addEventListener('scroll', () => {
 
 // 页面加载
 window.onload = function () {
+    openDatabase();
     checkConfigFiles();
     isConnected = false;
     disableButtons();
     debugOutput.style.display = 'none';
-};    
+};
+    

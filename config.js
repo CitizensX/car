@@ -1,5 +1,60 @@
 // 全局变量
 let deviceConfigs = [];
+let db;
+
+// 打开 IndexedDB 数据库
+function openDatabase() {
+    const request = indexedDB.open('DeviceImagesDB', 1);
+
+    request.onupgradeneeded = function (event) {
+        db = event.target.result;
+        const objectStore = db.createObjectStore('DeviceImages', { keyPath: 'deviceName' });
+    };
+
+    request.onsuccess = function (event) {
+        db = event.target.result;
+    };
+
+    request.onerror = function (event) {
+        console.error('IndexedDB 打开失败:', event.target.error);
+    };
+}
+
+// 存储设备图片到 IndexedDB
+function saveDeviceImage(deviceName, imageData) {
+    const transaction = db.transaction(['DeviceImages'], 'readwrite');
+    const objectStore = transaction.objectStore('DeviceImages');
+    const request = objectStore.put({ deviceName, imageData });
+
+    request.onsuccess = function () {
+        console.log('设备图片存储成功');
+    };
+
+    request.onerror = function (event) {
+        console.error('设备图片存储失败:', event.target.error);
+    };
+}
+
+// 从 IndexedDB 获取设备图片
+function getDeviceImage(deviceName, callback) {
+    const transaction = db.transaction(['DeviceImages']);
+    const objectStore = transaction.objectStore('DeviceImages');
+    const request = objectStore.get(deviceName);
+
+    request.onsuccess = function () {
+        const result = request.result;
+        if (result) {
+            callback(result.imageData);
+        } else {
+            callback(null);
+        }
+    };
+
+    request.onerror = function (event) {
+        console.error('设备图片获取失败:', event.target.error);
+        callback(null);
+    };
+}
 
 // 加载设备列表
 function loadDeviceList() {
@@ -22,9 +77,12 @@ function loadDeviceList() {
             deviceImage.style.marginRight = '10px';
             // 添加垂直居中样式
             deviceImage.style.verticalAlign = 'middle';
-            if (device.device_image) {
-                deviceImage.src = device.device_image;
-            }
+
+            getDeviceImage(device.device_name, (imageData) => {
+                if (imageData) {
+                    deviceImage.src = imageData;
+                }
+            });
 
             const deviceName = document.createElement('span');
             deviceName.textContent = device.device_name;
@@ -124,6 +182,7 @@ function addDevice() {
         const reader = new FileReader();
         reader.onload = function (e) {
             deviceImage = e.target.result;
+            saveDeviceImage(deviceName, deviceImage);
             const lockSignalValue = document.getElementById('lockSignalValue').value;
             const voltageDataInterface = document.getElementById('voltageDataInterface').value;
             const temperatureDataInterface = document.getElementById('temperatureDataInterface').value;
@@ -133,7 +192,7 @@ function addDevice() {
             const windowDataInterface = document.getElementById('windowDataInterface').value;
 
             const newDevice = {
-                device_image: deviceImage,
+                device_image: null,
                 device_name: deviceName,
                 device_id: deviceId,
                 device_key: deviceKey,
@@ -164,7 +223,7 @@ function addDevice() {
     const windowDataInterface = document.getElementById('windowDataInterface').value;
 
     const newDevice = {
-        device_image: deviceImage,
+        device_image: null,
         device_name: deviceName,
         device_id: deviceId,
         device_key: deviceKey,
@@ -248,13 +307,15 @@ function openEditDeviceModal(index) {
     document.getElementById('editWindowDataInterface').value = device.device_WindowDataInterface;
 
     const editDeviceImagePreview = document.getElementById('editDeviceImagePreview');
-    if (device.device_image) {
-        editDeviceImagePreview.src = device.device_image;
-        editDeviceImagePreview.style.display = 'block';
-    } else {
-        editDeviceImagePreview.src = '';
-        editDeviceImagePreview.style.display = 'none';
-    }
+    getDeviceImage(device.device_name, (imageData) => {
+        if (imageData) {
+            editDeviceImagePreview.src = imageData;
+            editDeviceImagePreview.style.display = 'block';
+        } else {
+            editDeviceImagePreview.src = '';
+            editDeviceImagePreview.style.display = 'none';
+        }
+    });
 
     // 存储当前编辑设备的索引
     editDeviceModal.dataset.index = index;
@@ -301,11 +362,12 @@ function editDevice() {
         return;
     }
     const deviceImageInput = document.getElementById('editDeviceImage');
-    let deviceImage = deviceConfigs[index].device_image;
+    let deviceImage = '';
     if (deviceImageInput.files.length > 0) {
         const reader = new FileReader();
         reader.onload = function (e) {
             deviceImage = e.target.result;
+            saveDeviceImage(deviceName, deviceImage);
             const lockSignalValue = document.getElementById('editLockSignalValue').value;
             const voltageDataInterface = document.getElementById('editVoltageDataInterface').value;
             const temperatureDataInterface = document.getElementById('editTemperatureDataInterface').value;
@@ -315,7 +377,7 @@ function editDevice() {
             const windowDataInterface = document.getElementById('editWindowDataInterface').value;
 
             const editedDevice = {
-                device_image: deviceImage,
+                device_image: null,
                 device_name: deviceName,
                 device_id: deviceId,
                 device_key: deviceKey,
@@ -351,7 +413,7 @@ function editDevice() {
     const windowDataInterface = document.getElementById('editWindowDataInterface').value;
 
     const editedDevice = {
-        device_image: deviceImage,
+        device_image: null,
         device_name: deviceName,
         device_id: deviceId,
         device_key: deviceKey,
@@ -377,13 +439,26 @@ function editDevice() {
 
 // 删除设备
 function deleteDevice(index) {
-    deviceConfigs.splice(index, 1);
-    localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
-    loadDeviceList();
+    const device = deviceConfigs[index];
+    const transaction = db.transaction(['DeviceImages'], 'readwrite');
+    const objectStore = transaction.objectStore('DeviceImages');
+    const request = objectStore.delete(device.device_name);
+
+    request.onsuccess = function () {
+        console.log('设备图片删除成功');
+        deviceConfigs.splice(index, 1);
+        localStorage.setItem('DeviceConfigS', JSON.stringify(deviceConfigs));
+        loadDeviceList();
+    };
+
+    request.onerror = function (event) {
+        console.error('设备图片删除失败:', event.target.error);
+    };
 }
 
 // 初始化事件绑定
 function init() {
+    openDatabase();
     const addDeviceBtn = document.getElementById('addDeviceBtn');
     const userConfigBtn = document.getElementById('userConfigBtn');
     const addDeviceConfirmBtn = document.getElementById('addDeviceConfirmBtn');
