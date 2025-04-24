@@ -1,7 +1,10 @@
+//index.js
 // 全局变量
 let client_id, client_secret, user_name, user_password;
 let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface;
 let db;
+let access_token;
+let access_token_expiration;
 
 // 获取页面元素
 const lockButton = document.getElementById('lock-button');
@@ -105,6 +108,38 @@ function debugLog(message) {
     }
 }
 
+// 检查 access_token 是否过期
+function isAccessTokenExpired() {
+    return access_token_expiration && Date.now() > access_token_expiration;
+}
+
+// 获取 access_token
+async function getAccessToken() {
+    try {
+        const response = await fetch('https://www.bigiot.net/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `grant_type=password&client_id=${client_id}&client_secret=${client_secret}&username=${user_name}&password=${user_password}`
+        });
+        const data = await response.json();
+        if (data.access_token) {
+            access_token = data.access_token;
+            access_token_expiration = Date.now() + data.expires_in * 1000;
+            localStorage.setItem('access_token', JSON.stringify({
+                token: access_token,
+                expiration: access_token_expiration
+            }));
+            debugLog(`获取 access_token 成功：${access_token_expiration} ${access_token}`);
+        } else {
+            debugLog('获取 access_token 失败');
+        }
+    } catch (error) {
+        debugLog(`获取 access_token 时出错: ${error}`);
+    }
+}
+
 // 检查配置文件并读取内容
 async function checkConfigFiles() {
     try {
@@ -157,6 +192,21 @@ async function checkConfigFiles() {
         } catch (error) {
             window.location.href = 'config.html';
             return;
+        }
+
+        // 读取 access_token 缓存
+        const accessTokenData = localStorage.getItem('access_token');
+        if (accessTokenData) {
+            const { token, expiration } = JSON.parse(accessTokenData);
+            access_token = token;
+            access_token_expiration = expiration;
+            if (isAccessTokenExpired()) {
+                await getAccessToken();
+            } else {
+                debugLog(`access_token 有效：${access_token_expiration} ${access_token}`);
+            }
+        } else {
+            await getAccessToken();
         }
 
         // 设置设备名称
@@ -213,6 +263,8 @@ function connectWebSocket() {
         } else if (data.M === 'loginok') {
             // 每 3 秒发送沟通指令数据
             setInterval(() => SendSayData("00"), 3000);
+            SendSayData("00");
+            debugLog('登录成功');
         } else if (data.M === 'say' && data.ID === `D${device_id}` && data.SIGN === 'S') {
             parseDeviceResponse(data.C);
         }
@@ -283,7 +335,7 @@ function parseDeviceResponse(response) {
     updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
     updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
     updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
-//    debugLog(`状态更新:${response}`);
+    //    debugLog(`状态更新:${response}`);
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
@@ -410,7 +462,7 @@ debugOutput.addEventListener('scroll', () => {
 // 页面加载
 window.onload = async function () {
     try {
-        debugLog('V 25.04.25.0');
+        debugLog('V 25.04.25.1');
         await checkConfigFiles();
         isConnected = false;
         debugOutput.style.display = 'none';
@@ -422,5 +474,4 @@ window.onload = async function () {
     } catch (error) {
         console.error('页面加载时出错:', error);
     }
-};
-    
+};    
