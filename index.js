@@ -33,6 +33,10 @@ let timer;
 let elapsedTime = 0;
 let isTimeVisible = true;
 
+// 新增定时器变量，分别用于离线提醒和成功提醒
+let offlineAlertTimer;
+let successAlertTimer;
+
 // 打开 IndexedDB 数据库
 function openDatabase() {
     return new Promise((resolve, reject) => {
@@ -324,7 +328,7 @@ function checkDeviceConnection() {
 // 按钮点击事件
 function handleButtonClick(button, commandOn, commandOff, actionText) {
     if (!isConnected) {
-        showOfflineAlert();
+        showOfflineAlert('设备离线');
         return;
     }
     const command = button.textContent.includes(actionText) ? commandOn : commandOff;
@@ -333,19 +337,24 @@ function handleButtonClick(button, commandOn, commandOff, actionText) {
     showSuccessAlert(`${button.textContent}指令发送成功`);
 }
 
-function showOfflineAlert() {
+function showOfflineAlert(message) {
+    // 清除之前的定时器
+    clearTimeout(offlineAlertTimer);
+    offlineAlert.textContent = message;
     offlineAlert.classList.add('show');
-    setTimeout(() => {
+    offlineAlertTimer = setTimeout(() => {
         offlineAlert.classList.remove('show');
-    }, 3000);
+    }, 10000);
 }
 
 function showSuccessAlert(message) {
+    // 清除之前的定时器
+    clearTimeout(successAlertTimer);
     successAlert.textContent = message;
     successAlert.classList.add('show');
-    setTimeout(() => {
+    successAlertTimer = setTimeout(() => {
         successAlert.classList.remove('show');
-    }, 3000);
+    }, 10000);
 }
 
 lockButton.addEventListener('click', () => handleButtonClick(lockButton, '001', '011', '解锁'));
