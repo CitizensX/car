@@ -25,7 +25,7 @@ let isConnected = false;
 let ws;
 let deviceCheckInterval; // 新增定时器变量
 let reconnectInterval; // 新增重连定时器变量
-const RECONNECT_DELAY = 5000; // 重连延迟时间，单位：毫秒
+const RECONNECT_DELAY = 1000; // 重连延迟时间，单位：毫秒
 
 // 新增定时器相关变量
 let timer;
@@ -358,17 +358,18 @@ if (deviceNameDisplay) {
     });
 }
 
-// 单击图片显示或隐藏调试信息和时间
+// 单击图片显示调试内容
 carImage.addEventListener('click', () => {
-    isDebugVisible = !isDebugVisible;
-    isTimeVisible = !isTimeVisible;
-    if (isDebugVisible) {
-        debugOutput.style.display = 'block';
-        timeDisplay.style.display = 'none';
-    } else {
-        debugOutput.style.display = 'none';
-        timeDisplay.style.display = 'block';
-    }
+    isDebugVisible = true;
+    debugOutput.style.display = 'block';
+    timeDisplay.style.display = 'none';
+});
+
+// 单击调试框隐藏调试内容
+debugOutput.addEventListener('click', () => {
+    isDebugVisible = false;
+    debugOutput.style.display = 'none';
+    timeDisplay.style.display = 'block';
 });
 
 // 监听滚动事件，处理自动滚动

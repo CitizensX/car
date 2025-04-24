@@ -108,7 +108,7 @@ body {
     overflow-y: auto;
     display: none;
     font-size: 8px;
-    pointer-events: none;
+    pointer-events: auto; /* 允许点击 */
 }
 
 .debug-output p {
