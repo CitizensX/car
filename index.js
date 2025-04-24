@@ -319,6 +319,7 @@ function checkDeviceConnection() {
     if (Date.now() - lastDataTime > 15000) {
         isConnected = false;
         debugLog('状态超时');
+        showOfflineAlert('状态超时');
         // 关闭设备状态检查
         clearInterval(deviceCheckInterval);
         deviceCheckInterval = null;
@@ -409,6 +410,7 @@ debugOutput.addEventListener('scroll', () => {
 // 页面加载
 window.onload = async function () {
     try {
+        debugLog('V 25.04.25.0');
         await checkConfigFiles();
         isConnected = false;
         debugOutput.style.display = 'none';
