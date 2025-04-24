@@ -117,6 +117,16 @@ body {
     white-space: normal;
 }
 
+.time-display {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    font-size: 12px;
+}
+
 @media (max-width: 600px) {
     .container {
         width: 100%;

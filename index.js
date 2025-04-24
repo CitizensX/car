@@ -23,6 +23,17 @@ let shouldAutoScroll = true;
 let lastDataTime = Date.now();
 let isConnected = false;
 let ws;
+let deviceCheckInterval; // 新增定时器变量
+let reconnectInterval; // 新增重连定时器变量
+const RECONNECT_DELAY = 5000; // 重连延迟时间，单位：毫秒
+
+// 新增定时器相关变量
+let timer;
+let elapsedTime = 0;
+const timeDisplay = document.createElement('div');
+timeDisplay.classList.add('time-display');
+carImage.parentNode.insertBefore(timeDisplay, carImage.nextSibling);
+let isTimeVisible = true;
 
 // 打开 IndexedDB 数据库
 function openDatabase() {
@@ -179,6 +190,8 @@ function setCarImage() {
         setTimeout(() => {
             debugOutput.style.width = carImage.offsetWidth + 'px';
             debugOutput.style.height = carImage.offsetHeight + 'px';
+            timeDisplay.style.left = carImage.offsetLeft + 'px';
+            timeDisplay.style.top = carImage.offsetTop + carImage.offsetHeight - timeDisplay.offsetHeight + 'px';
         }, 0);
     });
 }
@@ -188,6 +201,7 @@ function connectWebSocket() {
     ws = new WebSocket('wss://www.bigiot.net:8484');
     ws.onopen = () => {
         debugLog('WebSocket 已连接');
+        clearInterval(reconnectInterval); // 连接成功，清除重连定时器
     };
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -197,21 +211,23 @@ function connectWebSocket() {
         } else if (data.M === 'loginok') {
             // 每 3 秒发送沟通指令数据
             setInterval(() => SendSayData("00"), 3000);
-            // 每 15 秒检查设备连接状态
-            setInterval(checkDeviceConnection, 15000);
         } else if (data.M === 'say' && data.ID === `D${device_id}` && data.SIGN === 'S') {
             parseDeviceResponse(data.C);
         }
     };
     ws.onclose = () => {
-        debugLog('WebSocket 已关闭');
+        debugLog('WebSocket 已断开，尝试重连...');
         isConnected = false;
-        disableButtons();
+        clearInterval(deviceCheckInterval);
+        deviceCheckInterval = null;
+        // 启动重连定时器
+        reconnectInterval = setInterval(() => {
+            connectWebSocket();
+        }, RECONNECT_DELAY);
     };
     ws.onerror = (error) => {
         debugLog(`WebSocket 连接错误: ${error}`);
         isConnected = false;
-        disableButtons();
     };
 }
 
@@ -242,7 +258,11 @@ function SendSayData(data) {
 // 解析设备返回数据
 function parseDeviceResponse(response) {
     isConnected = true;
-    enableButtons();
+
+    if (!deviceCheckInterval) {
+        // 开启设备状态检查（每 15 秒检查设备连接状态）
+        deviceCheckInterval = setInterval(checkDeviceConnection, 15000);
+    }
 
     const [
         lockState,
@@ -260,13 +280,21 @@ function parseDeviceResponse(response) {
     updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
     updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
     updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
-    debugLog(`状态更新:${response}`);
+//    debugLog(`状态更新:${response}`);
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
     humidityDisplay.textContent = parseFloat(humidity).toFixed(2);
 
     lastDataTime = Date.now();
+
+    // 重置定时器
+    clearInterval(timer);
+    elapsedTime = 0;
+    timer = setInterval(() => {
+        elapsedTime += 0.1;
+        timeDisplay.textContent = elapsedTime.toFixed(1) + 's';
+    }, 100);
 }
 
 // 更新按钮状态
@@ -287,27 +315,11 @@ function updateButtonState(button, state, text1, text2, color1, color2, specialC
 function checkDeviceConnection() {
     if (Date.now() - lastDataTime > 15000) {
         isConnected = false;
-        disableButtons();
-        debugLog('设备掉线');
+        debugLog('状态超时');
+        // 关闭设备状态检查
+        clearInterval(deviceCheckInterval);
+        deviceCheckInterval = null;
     }
-}
-
-// 启用按钮
-function enableButtons() {
-    lockButton.disabled = false;
-    startButton.disabled = false;
-    trunkButton.disabled = false;
-    findCarButton.disabled = false;
-    windowButton.disabled = false;
-}
-
-// 禁用按钮
-function disableButtons() {
-    lockButton.disabled = true;
-    startButton.disabled = true;
-    trunkButton.disabled = true;
-    findCarButton.disabled = true;
-    windowButton.disabled = true;
 }
 
 // 按钮点击事件
@@ -345,13 +357,16 @@ if (deviceNameDisplay) {
     });
 }
 
-// 单击图片显示或隐藏调试信息
+// 单击图片显示或隐藏调试信息和时间
 carImage.addEventListener('click', () => {
     isDebugVisible = !isDebugVisible;
+    isTimeVisible = !isTimeVisible;
     if (isDebugVisible) {
         debugOutput.style.display = 'block';
+        timeDisplay.style.display = 'none';
     } else {
         debugOutput.style.display = 'none';
+        timeDisplay.style.display = 'block';
     }
 });
 
@@ -371,8 +386,12 @@ window.onload = async function () {
     try {
         await checkConfigFiles();
         isConnected = false;
-        disableButtons();
         debugOutput.style.display = 'none';
+        // 启动定时器
+        timer = setInterval(() => {
+            elapsedTime += 0.1;
+            timeDisplay.textContent = elapsedTime.toFixed(1) + 's';
+        }, 100);
     } catch (error) {
         console.error('页面加载时出错:', error);
     }
