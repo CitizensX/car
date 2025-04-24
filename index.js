@@ -228,6 +228,7 @@ function connectWebSocket() {
     ws.onerror = (error) => {
         debugLog(`WebSocket 连接错误: ${error}`);
         isConnected = false;
+        clearInterval(reconnectInterval); // 清除重连定时器
     };
 }
 
