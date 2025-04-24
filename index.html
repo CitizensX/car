@@ -10,7 +10,11 @@
 
 <body>
     <div class="container">
-        <img src="" alt="Car" id="car-image">
+        <div class="image-wrapper"> <!-- 新增包裹层 -->
+            <img src="" alt="Car" id="car-image">
+            <div class="debug-output"></div>
+            <div class="time-display"></div>
+        </div>
         <div class="content-area">
             <div class="info-container">
                 <div class="info">
@@ -29,7 +33,10 @@
             </div>
         </div>
     </div>
+    <div id="offline-alert" class="offline-alert">设备离线</div>
+    <div id="success-alert" class="success-alert"></div>
     <script src="index.js"></script>
 </body>
 
-</html>    
+</html>
+    

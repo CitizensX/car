@@ -25,6 +25,10 @@ body {
     margin: 0;
 }
 
+.image-wrapper {
+    position: relative; /* 新增样式 */
+}
+
 #car-image {
     max-width: 100%;
     height: auto;
@@ -83,10 +87,10 @@ body {
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     width: 100%;
-}
-
-.button:active {
-    transform: scale(0.95);
+    /* 去除浏览器默认的 outline */
+    outline: none;
+    /* 去除移动端浏览器的点击高亮效果 */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .button-disabled {
@@ -96,6 +100,11 @@ body {
 
 .button:hover {
     background-color: #45a049;
+}
+
+/* 添加按钮按下缩放效果 */
+.button:active {
+    transform: scale(0.95);
 }
 
 .debug-output {
@@ -108,7 +117,7 @@ body {
     overflow-y: auto;
     display: none;
     font-size: 8px;
-    pointer-events: auto; /* 允许点击 */
+    pointer-events: auto;
 }
 
 .debug-output p {
@@ -129,6 +138,46 @@ body {
     height: 2vh;
 }
 
+.offline-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ff4d4f;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.offline-alert.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.success-alert {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.success-alert.show {
+    opacity: 1;
+    visibility: visible;
+}
+
 @media (max-width: 600px) {
     .container {
         width: 100%;
@@ -144,4 +193,5 @@ body {
     .button {
         width: 90%;
     }
-}    
+}
+    

@@ -14,9 +14,10 @@ const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
 const carImage = document.getElementById('car-image');
 const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
-const debugOutput = document.createElement('div');
-debugOutput.classList.add('debug-output');
-carImage.parentNode.insertBefore(debugOutput, carImage.nextSibling);
+const debugOutput = document.querySelector('.debug-output');
+const timeDisplay = document.querySelector('.time-display');
+const offlineAlert = document.getElementById('offline-alert');
+const successAlert = document.getElementById('success-alert');
 let isDebugVisible = false;
 let shouldAutoScroll = true;
 
@@ -30,9 +31,6 @@ const RECONNECT_DELAY = 1000; // 重连延迟时间，单位：毫秒
 // 新增定时器相关变量
 let timer;
 let elapsedTime = 0;
-const timeDisplay = document.createElement('div');
-timeDisplay.classList.add('time-display');
-carImage.parentNode.insertBefore(timeDisplay, carImage.nextSibling);
 let isTimeVisible = true;
 
 // 打开 IndexedDB 数据库
@@ -326,12 +324,28 @@ function checkDeviceConnection() {
 // 按钮点击事件
 function handleButtonClick(button, commandOn, commandOff, actionText) {
     if (!isConnected) {
-        alert('设备离线');
+        showOfflineAlert();
         return;
     }
     const command = button.textContent.includes(actionText) ? commandOn : commandOff;
     SendSayData(command);
     debugLog(`发送${button.textContent}指令-${command}`);
+    showSuccessAlert(`${button.textContent}指令发送成功`);
+}
+
+function showOfflineAlert() {
+    offlineAlert.classList.add('show');
+    setTimeout(() => {
+        offlineAlert.classList.remove('show');
+    }, 3000);
+}
+
+function showSuccessAlert(message) {
+    successAlert.textContent = message;
+    successAlert.classList.add('show');
+    setTimeout(() => {
+        successAlert.classList.remove('show');
+    }, 3000);
 }
 
 lockButton.addEventListener('click', () => handleButtonClick(lockButton, '001', '011', '解锁'));
