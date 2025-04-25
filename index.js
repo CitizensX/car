@@ -1,10 +1,24 @@
-//index.js
 // 全局变量
 let client_id, client_secret, user_name, user_password;
 let device_name, device_id, device_key, device_LockSignalValue, device_VoltageDataInterface, device_TemperatureDataInterface, device_HumidityDataInterface, device_LockDataInterface, device_StartDataInterface, device_WindowDataInterface;
 let db;
-let access_token;
-let access_token_expiration;
+
+// BLE 相关变量
+let bleDevice;
+let bleServer;
+let bleService;
+let bleCharacteristic;
+let rssiInterval;
+let carStatus;
+let lastStatusTime;
+let statusTimeout = 10000;
+let voltage = 0.00;
+let temperature = 0.00;
+let humidity = 0.00;
+let deviceStatusSource = null;
+let networkConnected = false;
+let bluetoothConnected = false;
+let statusTimeoutTimer;
 
 // 获取页面元素
 const lockButton = document.getElementById('lock-button');
@@ -16,7 +30,7 @@ const voltageDisplay = document.getElementById('voltage');
 const temperatureDisplay = document.getElementById('temperature');
 const humidityDisplay = document.getElementById('humidity');
 const carImage = document.getElementById('car-image');
-const deviceNameDisplay = document.getElementById('device-name'); // 新增获取设备名称显示元素
+const deviceNameDisplay = document.getElementById('device-name'); // 获取设备名称显示元素
 const debugOutput = document.querySelector('.debug-output');
 const timeDisplay = document.querySelector('.time-display');
 const offlineAlert = document.getElementById('offline-alert');
@@ -27,16 +41,16 @@ let shouldAutoScroll = true;
 let lastDataTime = Date.now();
 let isConnected = false;
 let ws;
-let deviceCheckInterval; // 新增定时器变量
-let reconnectInterval; // 新增重连定时器变量
+let deviceCheckInterval; // 定时器变量
+let reconnectInterval; // 重连定时器变量
 const RECONNECT_DELAY = 1000; // 重连延迟时间，单位：毫秒
 
-// 新增定时器相关变量
+// 定时器相关变量
 let timer;
 let elapsedTime = 0;
 let isTimeVisible = true;
 
-// 新增定时器变量，分别用于离线提醒和成功提醒
+// 定时器变量，分别用于离线提醒和成功提醒
 let offlineAlertTimer;
 let successAlertTimer;
 
@@ -108,69 +122,6 @@ function debugLog(message) {
     }
 }
 
-// 检查 access_token 是否过期
-function isAccessTokenExpired() {
-    return access_token_expiration && Date.now() > access_token_expiration;
-}
-
-// 获取 access_token
-async function getAccessToken() {
-    const MAX_RETRIES = 3; // 最大重试次数
-    let retries = 0;
-
-    while (retries < MAX_RETRIES) {
-        try {
-            const controller = new AbortController();
-            const signal = controller.signal;
-            const timeoutId = setTimeout(() => {
-                controller.abort();
-            }, 10000); // 设置 10 秒超时
-
-            const proxyUrl = 'https://api.allorigins.win/raw?url=';
-            const apiUrl = 'https://www.bigiot.net/oauth/token';
-            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `grant_type=password&client_id=${client_id}&client_secret=${client_secret}&username=${user_name}&password=${user_password}`,
-                signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                // 检查响应状态码
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.access_token) {
-                access_token = data.access_token;
-                access_token_expiration = Date.now() + data.expires_in * 1000;
-                localStorage.setItem('access_token', JSON.stringify({
-                    token: access_token,
-                    expiration: access_token_expiration
-                }));
-                debugLog(`access_token获取成功：${access_token_expiration} ${access_token}`);
-                return;
-            } else {
-                debugLog('获取 access_token 失败');
-            }
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.error(`获取 access_token 时请求超时，第 ${retries + 1} 次重试:`, error);
-                debugLog(`获取 access_token 时请求超时，第 ${retries + 1} 次重试`);
-            } else {
-                console.error('获取 access_token 时的详细错误信息:', error);
-                debugLog(`获取 access_token 时出错: ${error}`);
-            }
-        }
-        retries++;
-    }
-    debugLog('获取 access_token 失败，已达到最大重试次数');
-}
-
 // 检查配置文件并读取内容
 async function checkConfigFiles() {
     try {
@@ -225,21 +176,6 @@ async function checkConfigFiles() {
             return;
         }
 
-        // 读取 access_token 缓存
-        const accessTokenData = localStorage.getItem('access_token');
-        if (accessTokenData) {
-            const { token, expiration } = JSON.parse(accessTokenData);
-            access_token = token;
-            access_token_expiration = expiration;
-            if (isAccessTokenExpired()) {
-                await getAccessToken();
-            } else {
-                debugLog(`access_token有效：${access_token_expiration} ${access_token}`);
-            }
-        } else {
-            await getAccessToken();
-        }
-
         // 设置设备名称
         if (deviceNameDisplay) {
             deviceNameDisplay.textContent = device_name;
@@ -250,6 +186,9 @@ async function checkConfigFiles() {
 
         // 连接 WebSocket
         connectWebSocket();
+
+        // 启动 BLE
+        startBluetooth();
     } catch (error) {
         console.error('打开 IndexedDB 数据库时出错:', error);
     }
@@ -295,7 +234,7 @@ function connectWebSocket() {
             // 每 3 秒发送沟通指令数据
             setInterval(() => SendSayData("00"), 3000);
             SendSayData("00");
-            debugLog('登录成功');
+            debugLog('WebSocket 登录成功');
         } else if (data.M === 'say' && data.ID === `D${device_id}` && data.SIGN === 'S') {
             parseDeviceResponse(data.C);
         }
@@ -411,12 +350,16 @@ function checkDeviceConnection() {
 
 // 按钮点击事件
 function handleButtonClick(button, commandOn, commandOff, actionText) {
-    if (!isConnected) {
+    if (!isConnected && !bluetoothConnected) {
         showOfflineAlert('设备离线');
         return;
     }
     const command = button.textContent.includes(actionText) ? commandOn : commandOff;
-    SendSayData(command);
+    if (bluetoothConnected) {
+        sendCommand(command);
+    } else {
+        SendSayData(command);
+    }
     debugLog(`发送${button.textContent}指令-${command}`);
     showSuccessAlert(`${button.textContent}指令发送成功`);
 }
@@ -505,4 +448,168 @@ window.onload = async function () {
     } catch (error) {
         console.error('页面加载时出错:', error);
     }
-};    
+};
+
+// BLE 相关方法
+function startBluetooth() {
+    navigator.bluetooth.requestDevice({
+        filters: [{ name: device_name }],
+        optionalServices: ['00FF']
+    })
+      .then(device => {
+            bleDevice = device;
+            return device.gatt.connect();
+        })
+      .then(server => {
+            bleServer = server;
+            return server.getPrimaryService('00FF');
+        })
+      .then(service => {
+            bleService = service;
+            return service.getCharacteristic('FF01');
+        })
+      .then(characteristic => {
+            bleCharacteristic = characteristic;
+            bluetoothConnected = true;
+            debugLog('蓝牙连接成功');
+            return characteristic.startNotifications();
+        })
+      .then(() => {
+            bleCharacteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+            startRssiDetection();
+            setInterval(() => {
+                sendCommand("00");
+            }, 1000);
+        })
+      .catch(error => {
+            console.error('蓝牙连接失败:', error);
+        });
+}
+
+function startRssiDetection() {
+    if (rssiInterval) clearInterval(rssiInterval);
+    rssiInterval = setInterval(() => {
+        if (bleDevice) {
+            bleDevice.getRssi()
+              .then(rssi => {
+                    updateSignalStrength(rssi);
+                })
+              .catch(error => {
+                    console.error('获取 RSSI 失败:', error);
+                });
+        }
+    }, 1000);
+}
+
+function updateSignalStrength(rssi) {
+    const signalPercentage = Math.min(100, Math.max(0, (rssi + 100) * 2));
+    // 可以在这里更新页面上的信号强度显示
+    console.log(`RSSI: ${rssi}, 信号百分比: ${signalPercentage}%`);
+}
+
+function handleCharacteristicValueChanged(event) {
+    const value = event.target.value;
+    const dataView = new DataView(value.buffer);
+    const statusData = new Uint8Array(value.buffer.slice(0, 5));
+    //console.log("蓝牙数据：",statusData);
+    carStatus = {
+        lockStatus: statusData[0] === 0 ? 'unlocked' : 'locked',
+        engineStatus: statusData[1] === 0 ? 'off' : 'on',
+        trunkStatus: statusData[2] === 0 ? 'closed' : 'opened',
+        findStatus: statusData[3] === 0 ? 'off' : 'on',
+        windowStatus: statusData[4] === 0 ? 'closed' : 'opened'
+    };
+
+    voltage = dataView.getFloat32(5, true);
+    temperature = dataView.getFloat32(9, true);
+    humidity = dataView.getFloat32(13, true);
+
+    updateButtonState(lockButton, carStatus.lockStatus === 'unlocked' ? '0' : '1', '解锁', '锁定', '#202020', '#4CAF50');
+    updateButtonState(startButton, carStatus.engineStatus === 'off' ? '0' : '1', '启动引擎', '关闭引擎', '#202020', '#4CAF50', '#007BFF');
+    updateButtonState(trunkButton, carStatus.trunkStatus === 'closed' ? '0' : '1', '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
+    updateButtonState(findCarButton, carStatus.findStatus === 'off' ? '0' : '1', '寻车', '关闭寻车', '#202020', '#4CAF50');
+    updateButtonState(windowButton, carStatus.windowStatus === 'closed' ? '0' : '1', '开窗', '关窗', '#202020', '#4CAF50');
+
+    voltageDisplay.textContent = voltage.toFixed(2);
+    temperatureDisplay.textContent = temperature.toFixed(2);
+    humidityDisplay.textContent = humidity.toFixed(2);
+
+    lastStatusTime = Date.now();
+    deviceStatusSource = "bluetooth";
+
+    if (networkConnected) {
+        mergeDeviceStatus();
+    }
+
+    if (statusTimeoutTimer) {
+        clearTimeout(statusTimeoutTimer);
+    }
+    statusTimeoutTimer = setTimeout(() => {
+        handleStatusTimeout();
+    }, 20000);
+}
+
+function sendCommand(command) {
+    const deviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
+    const sendData = {
+        deviceName: deviceConfig.device_name,
+        deviceId: deviceConfig.device_id,
+        deviceKey: deviceConfig.device_key,
+        lockSignalValue: deviceConfig.device_LockSignalValue,
+        command: command
+    };
+
+    const jsonStr = JSON.stringify(sendData);
+    const buffer = new TextEncoder().encode(jsonStr);
+
+    if (bleCharacteristic) {
+        bleCharacteristic.writeValueWithResponse(buffer)
+          .then(() => {
+                debugLog(`蓝牙指令发送成功: ${command}`);
+            })
+          .catch(error => {
+                console.error('蓝牙指令发送失败:', error);
+            });
+    }
+}
+
+function handleStatusTimeout() {
+    console.log('设备状态超时，未收到更新');
+    bluetoothConnected = false;
+    carStatus = null;
+    voltage = 0.00;
+    temperature = 0.00;
+    humidity = 0.00;
+    deviceStatusSource = null;
+    updateButtonState(lockButton, '0', '解锁', '锁定', '#202020', '#4CAF50');
+    updateButtonState(startButton, '0', '启动引擎', '关闭引擎', '#202020', '#4CAF50', '#007BFF');
+    updateButtonState(trunkButton, '0', '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
+    updateButtonState(findCarButton, '0', '寻车', '关闭寻车', '#202020', '#4CAF50');
+    updateButtonState(windowButton, '0', '开窗', '关窗', '#202020', '#4CAF50');
+    voltageDisplay.textContent = '0.00';
+    temperatureDisplay.textContent = '0.00';
+    humidityDisplay.textContent = '0.00';
+    if (rssiInterval) {
+        clearInterval(rssiInterval);
+        rssiInterval = null;
+    }
+    if (bleDevice) {
+        bleDevice.gatt.disconnect();
+    }
+    bleDevice = null;
+    bleServer = null;
+    bleService = null;
+    bleCharacteristic = null;
+    showOfflineAlert('蓝牙连接超时');
+    startBluetooth(); // 尝试重新连接蓝牙
+}
+
+function mergeDeviceStatus() {
+    if (deviceStatusSource === "network") {
+        console.log("设备状态已通过网络获取");
+    } else if (deviceStatusSource === "bluetooth") {
+        console.log("设备状态已通过蓝牙获取，无需网络获取");
+        // 这里可以添加停止网络状态获取的逻辑
+        networkConnected = false;
+    }
+}    
