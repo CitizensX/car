@@ -186,9 +186,6 @@ async function checkConfigFiles() {
 
         // 连接 WebSocket
         connectWebSocket();
-
-        // 启动 BLE
-        startBluetooth();
     } catch (error) {
         console.error('打开 IndexedDB 数据库时出错:', error);
     }
@@ -305,7 +302,6 @@ function parseDeviceResponse(response) {
     updateButtonState(trunkButton, trunkState, '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
     updateButtonState(findCarButton, findCarState, '寻车', '关闭寻车', '#202020', '#4CAF50');
     updateButtonState(windowButton, windowState, '开窗', '关窗', '#202020', '#4CAF50');
-    //    debugLog(`状态更新:${response}`);
 
     voltageDisplay.textContent = parseFloat(voltage).toFixed(2);
     temperatureDisplay.textContent = parseFloat(temperature).toFixed(2);
@@ -341,99 +337,46 @@ function checkDeviceConnection() {
     if (Date.now() - lastDataTime > 15000) {
         isConnected = false;
         debugLog('状态超时');
-        showOfflineAlert('状态超时');
-        // 关闭设备状态检查
-        clearInterval(deviceCheckInterval);
-        deviceCheckInterval = null;
     }
 }
 
-// 按钮点击事件
-function handleButtonClick(button, commandOn, commandOff, actionText) {
-    if (!isConnected && !bluetoothConnected) {
-        showOfflineAlert('设备离线');
-        return;
-    }
-    const command = button.textContent.includes(actionText) ? commandOn : commandOff;
-    if (bluetoothConnected) {
-        sendCommand(command);
-    } else {
-        SendSayData(command);
-    }
-    debugLog(`发送${button.textContent}指令-${command}`);
-    showSuccessAlert(`${button.textContent}指令发送成功`);
-}
+// 启动 BLE
+async function startBluetooth() {
+    try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters: [{ services: ['00FF'] }]
+        });
+        bleServer = await bleDevice.gatt.connect();
+        bleService = await bleServer.getPrimaryService('00FF');
+        bleCharacteristic = await bleService.getCharacteristic('FF01');
 
-function showOfflineAlert(message) {
-    // 清除之前的定时器
-    clearTimeout(offlineAlertTimer);
-    offlineAlert.textContent = message;
-    offlineAlert.classList.add('show');
-    offlineAlertTimer = setTimeout(() => {
-        offlineAlert.classList.remove('show');
-    }, 10000);
-}
+        // 连接成功后设置标志
+        bluetoothConnected = true;
+        debugLog('蓝牙连接成功');
 
-function showSuccessAlert(message) {
-    // 清除之前的定时器
-    clearTimeout(successAlertTimer);
-    successAlert.textContent = message;
-    successAlert.classList.add('show');
-    successAlertTimer = setTimeout(() => {
-        successAlert.classList.remove('show');
-    }, 10000);
-}
-
-lockButton.addEventListener('click', () => handleButtonClick(lockButton, '001', '011', '解锁'));
-startButton.addEventListener('click', () => handleButtonClick(startButton, '002', '012', '启动'));
-trunkButton.addEventListener('click', () => handleButtonClick(trunkButton, '003', '013', '打开尾箱'));
-findCarButton.addEventListener('click', () => handleButtonClick(findCarButton, '004', '014', '寻车'));
-windowButton.addEventListener('click', () => handleButtonClick(windowButton, '005', '015', '开窗'));
-
-// 5 秒内点击 5 次设备名称跳转配置页面
-if (deviceNameDisplay) {
-    let clickCount = 0;
-    let lastClickTime = 0;
-    deviceNameDisplay.addEventListener('click', () => {
-        const currentTime = Date.now();
-        if (currentTime - lastClickTime < 5000) {
-            clickCount++;
-            if (clickCount === 5) {
-                window.location.href = 'config.html';
+        // 开始 RSSI 监测
+        rssiInterval = setInterval(async () => {
+            try {
+                const rssi = await bleDevice.gatt.readRemoteRssi();
+                debugLog(`RSSI: ${rssi}`);
+            } catch (error) {
+                debugLog(`读取 RSSI 时出错: ${error}`);
             }
-        } else {
-            clickCount = 1;
-        }
-        lastClickTime = currentTime;
-    });
+        }, 5000);
+
+        // 监听特征值变化
+        await bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
+            const value = event.target.value;
+            // 处理特征值变化
+            debugLog(`特征值变化: ${value}`);
+        });
+    } catch (error) {
+        debugLog(`蓝牙连接失败: ${error}`);
+    }
 }
 
-// 单击图片显示调试内容
-carImage.addEventListener('click', () => {
-    isDebugVisible = true;
-    debugOutput.style.display = 'block';
-    timeDisplay.style.display = 'none';
-});
-
-// 单击调试框隐藏调试内容
-debugOutput.addEventListener('click', () => {
-    isDebugVisible = false;
-    debugOutput.style.display = 'none';
-    timeDisplay.style.display = 'block';
-});
-
-// 监听滚动事件，处理自动滚动
-debugOutput.addEventListener('scroll', () => {
-    const threshold = 5;
-    const isAtBottom = debugOutput.scrollTop + debugOutput.clientHeight >= debugOutput.scrollHeight - threshold;
-    if (isAtBottom) {
-        shouldAutoScroll = true;
-    } else {
-        shouldAutoScroll = false;
-    }
-});
-
-// 页面加载
+// 创建不可见按钮并在页面加载时触发点击
 window.onload = async function () {
     try {
         debugLog('V 25.04.25.1');
@@ -445,171 +388,16 @@ window.onload = async function () {
             elapsedTime += 0.1;
             timeDisplay.textContent = elapsedTime.toFixed(1) + 's';
         }, 100);
+
+        // 创建不可见按钮
+        const invisibleButton = document.createElement('button');
+        invisibleButton.style.display = 'none';
+        invisibleButton.addEventListener('click', startBluetooth);
+        document.body.appendChild(invisibleButton);
+
+        // 自动触发点击事件
+        invisibleButton.click();
     } catch (error) {
         console.error('页面加载时出错:', error);
     }
-};
-
-// BLE 相关方法
-function startBluetooth() {
-    navigator.bluetooth.requestDevice({
-        filters: [{ name: device_name }],
-        optionalServices: ['00FF']
-    })
-      .then(device => {
-            bleDevice = device;
-            return device.gatt.connect();
-        })
-      .then(server => {
-            bleServer = server;
-            return server.getPrimaryService('00FF');
-        })
-      .then(service => {
-            bleService = service;
-            return service.getCharacteristic('FF01');
-        })
-      .then(characteristic => {
-            bleCharacteristic = characteristic;
-            bluetoothConnected = true;
-            debugLog('蓝牙连接成功');
-            return characteristic.startNotifications();
-        })
-      .then(() => {
-            bleCharacteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
-            startRssiDetection();
-            setInterval(() => {
-                sendCommand("00");
-            }, 1000);
-        })
-      .catch(error => {
-            console.error('蓝牙连接失败:', error);
-        });
-}
-
-function startRssiDetection() {
-    if (rssiInterval) clearInterval(rssiInterval);
-    rssiInterval = setInterval(() => {
-        if (bleDevice) {
-            bleDevice.getRssi()
-              .then(rssi => {
-                    updateSignalStrength(rssi);
-                })
-              .catch(error => {
-                    console.error('获取 RSSI 失败:', error);
-                });
-        }
-    }, 1000);
-}
-
-function updateSignalStrength(rssi) {
-    const signalPercentage = Math.min(100, Math.max(0, (rssi + 100) * 2));
-    // 可以在这里更新页面上的信号强度显示
-    console.log(`RSSI: ${rssi}, 信号百分比: ${signalPercentage}%`);
-}
-
-function handleCharacteristicValueChanged(event) {
-    const value = event.target.value;
-    const dataView = new DataView(value.buffer);
-    const statusData = new Uint8Array(value.buffer.slice(0, 5));
-    //console.log("蓝牙数据：",statusData);
-    carStatus = {
-        lockStatus: statusData[0] === 0 ? 'unlocked' : 'locked',
-        engineStatus: statusData[1] === 0 ? 'off' : 'on',
-        trunkStatus: statusData[2] === 0 ? 'closed' : 'opened',
-        findStatus: statusData[3] === 0 ? 'off' : 'on',
-        windowStatus: statusData[4] === 0 ? 'closed' : 'opened'
-    };
-
-    voltage = dataView.getFloat32(5, true);
-    temperature = dataView.getFloat32(9, true);
-    humidity = dataView.getFloat32(13, true);
-
-    updateButtonState(lockButton, carStatus.lockStatus === 'unlocked' ? '0' : '1', '解锁', '锁定', '#202020', '#4CAF50');
-    updateButtonState(startButton, carStatus.engineStatus === 'off' ? '0' : '1', '启动引擎', '关闭引擎', '#202020', '#4CAF50', '#007BFF');
-    updateButtonState(trunkButton, carStatus.trunkStatus === 'closed' ? '0' : '1', '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
-    updateButtonState(findCarButton, carStatus.findStatus === 'off' ? '0' : '1', '寻车', '关闭寻车', '#202020', '#4CAF50');
-    updateButtonState(windowButton, carStatus.windowStatus === 'closed' ? '0' : '1', '开窗', '关窗', '#202020', '#4CAF50');
-
-    voltageDisplay.textContent = voltage.toFixed(2);
-    temperatureDisplay.textContent = temperature.toFixed(2);
-    humidityDisplay.textContent = humidity.toFixed(2);
-
-    lastStatusTime = Date.now();
-    deviceStatusSource = "bluetooth";
-
-    if (networkConnected) {
-        mergeDeviceStatus();
-    }
-
-    if (statusTimeoutTimer) {
-        clearTimeout(statusTimeoutTimer);
-    }
-    statusTimeoutTimer = setTimeout(() => {
-        handleStatusTimeout();
-    }, 20000);
-}
-
-function sendCommand(command) {
-    const deviceConfig = JSON.parse(localStorage.getItem('DeviceConfig'));
-    const sendData = {
-        deviceName: deviceConfig.device_name,
-        deviceId: deviceConfig.device_id,
-        deviceKey: deviceConfig.device_key,
-        lockSignalValue: deviceConfig.device_LockSignalValue,
-        command: command
-    };
-
-    const jsonStr = JSON.stringify(sendData);
-    const buffer = new TextEncoder().encode(jsonStr);
-
-    if (bleCharacteristic) {
-        bleCharacteristic.writeValueWithResponse(buffer)
-          .then(() => {
-                debugLog(`蓝牙指令发送成功: ${command}`);
-            })
-          .catch(error => {
-                console.error('蓝牙指令发送失败:', error);
-            });
-    }
-}
-
-function handleStatusTimeout() {
-    console.log('设备状态超时，未收到更新');
-    bluetoothConnected = false;
-    carStatus = null;
-    voltage = 0.00;
-    temperature = 0.00;
-    humidity = 0.00;
-    deviceStatusSource = null;
-    updateButtonState(lockButton, '0', '解锁', '锁定', '#202020', '#4CAF50');
-    updateButtonState(startButton, '0', '启动引擎', '关闭引擎', '#202020', '#4CAF50', '#007BFF');
-    updateButtonState(trunkButton, '0', '打开尾箱', '关闭尾箱', '#202020', '#4CAF50');
-    updateButtonState(findCarButton, '0', '寻车', '关闭寻车', '#202020', '#4CAF50');
-    updateButtonState(windowButton, '0', '开窗', '关窗', '#202020', '#4CAF50');
-    voltageDisplay.textContent = '0.00';
-    temperatureDisplay.textContent = '0.00';
-    humidityDisplay.textContent = '0.00';
-    if (rssiInterval) {
-        clearInterval(rssiInterval);
-        rssiInterval = null;
-    }
-    if (bleDevice) {
-        bleDevice.gatt.disconnect();
-    }
-    bleDevice = null;
-    bleServer = null;
-    bleService = null;
-    bleCharacteristic = null;
-    showOfflineAlert('蓝牙连接超时');
-    startBluetooth(); // 尝试重新连接蓝牙
-}
-
-function mergeDeviceStatus() {
-    if (deviceStatusSource === "network") {
-        console.log("设备状态已通过网络获取");
-    } else if (deviceStatusSource === "bluetooth") {
-        console.log("设备状态已通过蓝牙获取，无需网络获取");
-        // 这里可以添加停止网络状态获取的逻辑
-        networkConnected = false;
-    }
-}    
+};    
