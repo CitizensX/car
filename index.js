@@ -115,29 +115,60 @@ function isAccessTokenExpired() {
 
 // 获取 access_token
 async function getAccessToken() {
-    try {
-        const response = await fetch('https://www.bigiot.net/oauth/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `grant_type=password&client_id=${client_id}&client_secret=${client_secret}&username=${user_name}&password=${user_password}`
-        });
-        const data = await response.json();
-        if (data.access_token) {
-            access_token = data.access_token;
-            access_token_expiration = Date.now() + data.expires_in * 1000;
-            localStorage.setItem('access_token', JSON.stringify({
-                token: access_token,
-                expiration: access_token_expiration
-            }));
-            debugLog(`获取 access_token 成功：${access_token_expiration} ${access_token}`);
-        } else {
-            debugLog('获取 access_token 失败');
+    const MAX_RETRIES = 3; // 最大重试次数
+    let retries = 0;
+
+    while (retries < MAX_RETRIES) {
+        try {
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, 10000); // 设置 10 秒超时
+
+            const proxyUrl = 'https://api.allorigins.win/raw?url=';
+            const apiUrl = 'https://www.bigiot.net/oauth/token';
+            const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `grant_type=password&client_id=${client_id}&client_secret=${client_secret}&username=${user_name}&password=${user_password}`,
+                signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                // 检查响应状态码
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.access_token) {
+                access_token = data.access_token;
+                access_token_expiration = Date.now() + data.expires_in * 1000;
+                localStorage.setItem('access_token', JSON.stringify({
+                    token: access_token,
+                    expiration: access_token_expiration
+                }));
+                debugLog(`access_token获取成功：${access_token_expiration} ${access_token}`);
+                return;
+            } else {
+                debugLog('获取 access_token 失败');
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                console.error(`获取 access_token 时请求超时，第 ${retries + 1} 次重试:`, error);
+                debugLog(`获取 access_token 时请求超时，第 ${retries + 1} 次重试`);
+            } else {
+                console.error('获取 access_token 时的详细错误信息:', error);
+                debugLog(`获取 access_token 时出错: ${error}`);
+            }
         }
-    } catch (error) {
-        debugLog(`获取 access_token 时出错: ${error}`);
+        retries++;
     }
+    debugLog('获取 access_token 失败，已达到最大重试次数');
 }
 
 // 检查配置文件并读取内容
@@ -203,7 +234,7 @@ async function checkConfigFiles() {
             if (isAccessTokenExpired()) {
                 await getAccessToken();
             } else {
-                debugLog(`access_token 有效：${access_token_expiration} ${access_token}`);
+                debugLog(`access_token有效：${access_token_expiration} ${access_token}`);
             }
         } else {
             await getAccessToken();
